@@ -1,0 +1,286 @@
+@import "tailwindcss";
+
+/* Design System - The Mateus Build */
+:root {
+  /* Colors - Space Palette */
+  --space-indigo: #22223B;
+  --dusty-grape: #4A4E69;
+  --lilac-ash: #9A8C98;
+  --almond-silk: #C9ADA7;
+  --seashell: #F2E9E4;
+
+  /* Game-specific colors */
+  --xp-gold: #FFD700;
+  --health-green: #4ADE80;
+  --mana-blue: #60A5FA;
+  --legendary-purple: #A855F7;
+  --epic-orange: #F97316;
+  --rare-blue: #3B82F6;
+  --common-gray: #9CA3AF;
+
+  /* Font Sizes */
+  --fs-p-sm: 14px;
+  --fs-p-lg: 16px;
+  --fs-p-xl: 20px;
+  --fs-p-xxl: 24px;
+  --fs-h-sm: 24px;
+  --fs-h-lg: 32px;
+  --fs-h-xl: 52px;
+  --fs-h-xxl: 76px;
+
+  /* Spacing (8px grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  /* Animations */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-instant: 100ms;
+  --duration-fast: 200ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+
+  /* Theme */
+  --background: var(--seashell);
+  --foreground: var(--space-indigo);
+  --card-bg: #ffffff;
+  --card-border: var(--almond-silk);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-space-indigo: var(--space-indigo);
+  --color-dusty-grape: var(--dusty-grape);
+  --color-lilac-ash: var(--lilac-ash);
+  --color-almond-silk: var(--almond-silk);
+  --color-seashell: var(--seashell);
+  --color-xp-gold: var(--xp-gold);
+  --color-health-green: var(--health-green);
+  --color-mana-blue: var(--mana-blue);
+  --color-legendary-purple: var(--legendary-purple);
+  --color-epic-orange: var(--epic-orange);
+  --color-rare-blue: var(--rare-blue);
+  --color-common-gray: var(--common-gray);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Albert Sans', system-ui, -apple-system, sans-serif;
+  font-size: var(--fs-p-lg);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'PP Mondwest', 'Albert Sans', system-ui, sans-serif;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Container utilities */
+.container-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+.container-narrow {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .container-page, .container-narrow {
+    padding: 0 var(--space-6);
+  }
+}
+
+@media (min-width: 768px) {
+  .container-page, .container-narrow {
+    padding: 0 var(--space-10);
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-page, .container-narrow {
+    padding: 0 var(--space-12);
+  }
+}
+
+/* Game-specific styles */
+.game-card {
+  background: var(--card-bg);
+  border: 2px solid var(--card-border);
+  border-radius: 12px;
+  padding: var(--space-4);
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+
+.game-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(34, 34, 59, 0.15);
+}
+
+.btn-primary {
+  background: var(--space-indigo);
+  color: var(--seashell);
+  padding: var(--space-3) var(--space-6);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: var(--fs-p-sm);
+  border: none;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+
+.btn-primary:hover {
+  background: var(--dusty-grape);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--space-indigo);
+  padding: var(--space-3) var(--space-6);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: var(--fs-p-sm);
+  border: 2px solid var(--space-indigo);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+
+.btn-secondary:hover {
+  background: var(--space-indigo);
+  color: var(--seashell);
+}
+
+/* Progress bar */
+.progress-bar {
+  height: 8px;
+  background: var(--almond-silk);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--xp-gold);
+  border-radius: 4px;
+  transition: width var(--duration-normal) var(--ease-out);
+}
+
+/* Rarity glow effects */
+.rarity-legendary {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+  border-color: var(--legendary-purple) !important;
+}
+
+.rarity-epic {
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.3);
+  border-color: var(--epic-orange) !important;
+}
+
+.rarity-rare {
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+  border-color: var(--rare-blue) !important;
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@keyframes pop-in {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+.animate-pop-in {
+  animation: pop-in var(--duration-normal) var(--ease-out);
+}
+
+/* Code editor styles */
+.code-editor {
+  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+  font-size: var(--fs-p-sm);
+  background: var(--space-indigo);
+  color: var(--seashell);
+  padding: var(--space-4);
+  border-radius: 8px;
+  line-height: 1.5;
+  tab-size: 2;
+}
+
+.code-editor::selection {
+  background: var(--dusty-grape);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--almond-silk);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--lilac-ash);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--dusty-grape);
+}
