@@ -1,18 +1,9 @@
 'use client';
 
 import { useGameStore } from '@/store/gameStore';
-import {
-  Star,
-  Coin,
-  Fire,
-  Sword,
-  BookOpen,
-  Backpack,
-  Brain,
-  GearSix
-} from '@phosphor-icons/react';
+import { Sword, Backpack, Code, BookOpen, Play, Pause } from '@phosphor-icons/react';
 
-type TabType = 'adventure' | 'skills' | 'inventory' | 'review';
+type TabType = 'combat' | 'inventory' | 'scripts' | 'concepts';
 
 interface GameHeaderProps {
   activeTab: TabType;
@@ -20,82 +11,73 @@ interface GameHeaderProps {
 }
 
 export function GameHeader({ activeTab, onTabChange }: GameHeaderProps) {
-  const character = useGameStore((state) => state.character);
-  const currentStreak = useGameStore((state) => state.currentStreak);
-  const dueReviews = useGameStore((state) => state.getDueReviews());
+  const hero = useGameStore(s => s.hero);
+  const killCount = useGameStore(s => s.killCount);
+  const isAutoBattling = useGameStore(s => s.isAutoBattling);
+  const isPaused = useGameStore(s => s.isPaused);
+  const combatSpeed = useGameStore(s => s.combatSpeed);
+  const startAutoBattle = useGameStore(s => s.startAutoBattle);
+  const togglePause = useGameStore(s => s.togglePause);
+  const setCombatSpeed = useGameStore(s => s.setCombatSpeed);
 
-  const tabs: { id: TabType; label: string; icon: React.ReactNode; badge?: number }[] = [
-    { id: 'adventure', label: 'Adventure', icon: <Sword size={20} /> },
-    { id: 'skills', label: 'Skills', icon: <BookOpen size={20} /> },
+  const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
+    { id: 'combat', label: 'Combat', icon: <Sword size={20} /> },
     { id: 'inventory', label: 'Inventory', icon: <Backpack size={20} /> },
-    {
-      id: 'review',
-      label: 'Review',
-      icon: <Brain size={20} />,
-      badge: dueReviews.length || undefined
-    }
+    { id: 'scripts', label: 'Scripts', icon: <Code size={20} /> },
+    { id: 'concepts', label: 'Learn', icon: <BookOpen size={20} /> }
   ];
 
   return (
-    <header className="bg-white border-b border-[#C9ADA7] sticky top-0 z-40">
+    <header className="bg-[#22223B] border-b border-[#4A4E69] sticky top-0 z-50">
       <div className="container-page">
-        {/* Top bar */}
-        <div className="flex items-center justify-between py-3">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-[#22223B]">CodeQuest</h1>
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#F2E9E4]">
-              <Star size={16} weight="fill" className="text-[#FFD700]" />
-              <span className="font-semibold text-sm text-[#22223B]">
-                Lv.{character.level}
+        <div className="flex items-center justify-between h-14">
+          <div className="flex items-center gap-6">
+            <h1 className="text-xl font-bold text-white">CodeQuest</h1>
+            <div className="hidden sm:flex items-center gap-4 text-sm">
+              <span className="text-[#C9ADA7]">
+                Lv.{hero.level} <span className="text-white font-medium">{hero.name}</span>
               </span>
+              <span className="text-[#FFD700]">{hero.gold.toLocaleString()} gold</span>
+              <span className="text-[#9A8C98]">{killCount.toLocaleString()} kills</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#F2E9E4]">
-              <Coin size={16} weight="fill" className="text-[#FFD700]" />
-              <span className="font-semibold text-sm text-[#22223B]">
-                {character.gold}
-              </span>
-            </div>
+          <nav className="flex items-center gap-1">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => onTabChange(tab.id)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                  ${activeTab === tab.id ? 'bg-[#4A4E69] text-white' : 'text-[#9A8C98] hover:text-white hover:bg-[#4A4E69]/50'}`}
+              >
+                {tab.icon}
+                <span className="hidden sm:inline">{tab.label}</span>
+              </button>
+            ))}
+          </nav>
 
-            {currentStreak > 0 && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-orange-100 to-red-100">
-                <Fire size={16} weight="fill" className="text-[#F97316]" />
-                <span className="font-semibold text-sm text-[#22223B]">
-                  {currentStreak}
-                </span>
-              </div>
-            )}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-[#4A4E69] rounded-lg p-1">
+              {[1, 2, 5].map(speed => (
+                <button
+                  key={speed}
+                  onClick={() => setCombatSpeed(speed)}
+                  className={`px-2 py-1 rounded text-xs font-medium transition-colors
+                    ${combatSpeed === speed ? 'bg-[#22223B] text-white' : 'text-[#9A8C98] hover:text-white'}`}
+                >
+                  {speed}x
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => isAutoBattling ? togglePause() : startAutoBattle()}
+              className={`p-2 rounded-lg transition-colors
+                ${isAutoBattling && !isPaused ? 'bg-green-600 hover:bg-green-700' : 'bg-[#4A4E69] hover:bg-[#5A5E79]'}`}
+            >
+              {isAutoBattling && !isPaused ? <Pause size={20} weight="fill" /> : <Play size={20} weight="fill" />}
+            </button>
           </div>
         </div>
-
-        {/* Navigation tabs */}
-        <nav className="flex gap-1 -mb-px">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className={`
-                flex items-center gap-2 px-4 py-3 font-medium text-sm
-                border-b-2 transition-all relative
-                ${
-                  activeTab === tab.id
-                    ? 'border-[#22223B] text-[#22223B]'
-                    : 'border-transparent text-[#4A4E69] hover:text-[#22223B]'
-                }
-              `}
-            >
-              {tab.icon}
-              <span className="hidden sm:inline">{tab.label}</span>
-              {tab.badge && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-[#A855F7] text-white text-xs font-bold rounded-full">
-                  {tab.badge > 9 ? '9+' : tab.badge}
-                </span>
-              )}
-            </button>
-          ))}
-        </nav>
       </div>
     </header>
   );

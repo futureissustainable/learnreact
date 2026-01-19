@@ -4,515 +4,1081 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
   GameState,
-  Character,
-  Skill,
-  Item,
-  ReviewItem,
-  ChallengeResult,
+  Hero,
+  Mob,
+  CombatStats,
+  Equipment,
+  Ability,
+  AutoScript,
+  Zone,
+  JsConcept,
+  CombatLogEntry,
   calculateXpForLevel,
-  Quest,
-  CharacterClass
+  calculateDamage,
+  calculateMobStats,
+  generateInstanceId
 } from '@/types/game';
-import { INITIAL_SKILLS } from '@/data/skills';
-import { rollForItem } from '@/data/items';
+import { ZONES, ABILITIES, DEFAULT_SCRIPTS, JS_CONCEPTS, getEquipmentById, generateEquipmentDrop } from '@/data/gameData';
 
-interface GameStore extends GameState {
-  // Character actions
-  initializeCharacter: (name: string, characterClass: CharacterClass) => void;
-  addXp: (amount: number) => void;
-  addGold: (amount: number) => void;
-  addItem: (item: Item) => void;
-  equipItem: (itemId: string) => void;
-  unequipItem: (itemId: string) => void;
+// ============ INITIAL STATE ============
 
-  // Skill actions
-  addSkillXp: (skillId: string, amount: number) => void;
-  unlockSkill: (skillId: string) => void;
+const createInitialHero = (name: string): Hero => {
+  const baseStats: CombatStats = {
+    hp: 100,
+    maxHp: 100,
+    mana: 50,
+    maxMana: 50,
+    attack: 10,
+    defense: 5,
+    critChance: 0.05,
+    critDamage: 1.5,
+    attackSpeed: 1.0,
+    lifeSteal: 0
+  };
 
-  // Challenge actions
-  completeChallenge: (challengeId: string, correct: boolean, skillId: string) => ChallengeResult;
-  getAvailableChallenges: () => string[];
-
-  // Review system (spaced repetition)
-  addToReviewQueue: (challengeId: string) => void;
-  updateReviewItem: (challengeId: string, correct: boolean) => void;
-  getDueReviews: () => ReviewItem[];
-
-  // Quest actions
-  setActiveQuest: (quest: Quest | undefined) => void;
-  updateQuestProgress: () => void;
-
-  // Streak and session
-  updateStreak: () => void;
-  addPlayTime: (minutes: number) => void;
-  completeTutorial: () => void;
-
-  // Utils
-  resetGame: () => void;
-  getEquippedEffects: () => { xpBoost: number; goldBoost: number; hints: number; retries: number };
-}
-
-const createInitialCharacter = (name: string, characterClass: CharacterClass): Character => ({
-  name,
-  class: characterClass,
-  level: 1,
-  xp: 0,
-  xpToNextLevel: calculateXpForLevel(2),
-  gold: 50,
-  stats: {
-    wisdom: characterClass === 'frontend-wizard' ? 12 : 10,
-    focus: characterClass === 'react-ranger' ? 12 : 10,
-    creativity: characterClass === 'ui-bard' ? 12 : 10,
-    persistence: characterClass === 'fullstack-warrior' ? 12 : 10
-  },
-  inventory: [],
-  equippedItems: [],
-  achievements: []
-});
+  return {
+    name,
+    level: 1,
+    xp: 0,
+    xpToNextLevel: calculateXpForLevel(2),
+    gold: 0,
+    stats: { ...baseStats },
+    baseStats: { ...baseStats },
+    equipment: {
+      weapon: null,
+      armor: null,
+      accessory: null
+    },
+    abilities: ABILITIES.filter(a => a.unlocked).map(a => ({ ...a })),
+    scripts: DEFAULT_SCRIPTS.map(s => ({ ...s })),
+    activeBuffs: []
+  };
+};
 
 const getInitialState = (): GameState => ({
-  character: createInitialCharacter('Hero', 'frontend-wizard'),
-  skills: INITIAL_SKILLS,
-  completedChallenges: [],
-  currentStreak: 0,
-  lastPlayedDate: new Date().toISOString().split('T')[0],
-  reviewQueue: [],
-  activeQuest: undefined,
-  tutorialComplete: false,
+  hero: createInitialHero('Hero'),
+  initialized: false,
+  currentZone: ZONES[0],
+  currentMobs: [],
+  combatLog: [],
+  isAutoBattling: false,
+  isPaused: false,
+  killCount: 0,
+  sessionKills: 0,
+  totalDamageDealt: 0,
+  highestHit: 0,
+  totalGoldEarned: 0,
+  totalXpEarned: 0,
+  bossesDefeated: [],
+  zones: ZONES.map(z => ({ ...z })),
+  concepts: JS_CONCEPTS.map(c => ({ ...c, learnByDoing: c.learnByDoing.map(t => ({ ...t })) })),
+  inventory: [],
+  maxInventorySize: 50,
+  combatSpeed: 1,
+  autoLoot: true,
+  showDamageNumbers: true,
+  lastTick: Date.now(),
   totalPlayTime: 0
 });
+
+// ============ STORE INTERFACE ============
+
+interface GameStore extends GameState {
+  // Initialization
+  initializeGame: (heroName: string) => void;
+
+  // Combat
+  startAutoBattle: () => void;
+  stopAutoBattle: () => void;
+  togglePause: () => void;
+  gameTick: (deltaTime: number) => void;
+  spawnMob: () => void;
+  playerAttack: () => void;
+  mobAttack: (mob: Mob) => void;
+  useAbility: (abilityId: string) => void;
+  killMob: (mobInstanceId: string) => void;
+
+  // Scripts
+  toggleScript: (scriptId: string) => void;
+  evaluateScripts: () => void;
+
+  // Progression
+  addXp: (amount: number) => void;
+  addGold: (amount: number) => void;
+  checkLevelUp: () => void;
+
+  // Zones
+  changeZone: (zoneId: string) => void;
+  unlockZone: (zoneId: string) => void;
+  summonBoss: () => void;
+
+  // Equipment
+  equipItem: (itemId: string) => void;
+  unequipSlot: (slot: 'weapon' | 'armor' | 'accessory') => void;
+  addToInventory: (equipment: Equipment) => void;
+  sellItem: (itemId: string) => void;
+  recalculateStats: () => void;
+
+  // Concepts
+  addConceptXp: (conceptId: string, amount: number) => void;
+  learnConcept: (conceptId: string) => void;
+  updateLearnTasks: (taskType: string, value?: number) => void;
+
+  // Combat Log
+  addLogEntry: (entry: Omit<CombatLogEntry, 'id' | 'timestamp'>) => void;
+  clearLog: () => void;
+
+  // Utility
+  resetGame: () => void;
+  setCombatSpeed: (speed: number) => void;
+}
+
+// ============ STORE IMPLEMENTATION ============
 
 export const useGameStore = create<GameStore>()(
   persist(
     (set, get) => ({
       ...getInitialState(),
 
-      initializeCharacter: (name, characterClass) => {
+      // ============ INITIALIZATION ============
+
+      initializeGame: (heroName) => {
+        const hero = createInitialHero(heroName);
         set({
-          character: createInitialCharacter(name, characterClass),
-          skills: INITIAL_SKILLS,
-          completedChallenges: [],
-          tutorialComplete: false
+          hero,
+          initialized: true,
+          currentZone: ZONES[0],
+          zones: ZONES.map(z => ({ ...z })),
+          concepts: JS_CONCEPTS.map(c => ({ ...c, learnByDoing: c.learnByDoing.map(t => ({ ...t })) })),
+          combatLog: [],
+          killCount: 0,
+          sessionKills: 0
+        });
+
+        get().addLogEntry({
+          type: 'zone',
+          message: `Entered ${ZONES[0].name}`,
+          color: '#22C55E'
+        });
+
+        get().spawnMob();
+      },
+
+      // ============ COMBAT ============
+
+      startAutoBattle: () => {
+        set({ isAutoBattling: true, lastTick: Date.now() });
+        get().addLogEntry({
+          type: 'zone',
+          message: 'Auto-battle started',
+          color: '#3B82F6'
         });
       },
 
-      addXp: (amount) => {
-        set((state) => {
-          const effects = get().getEquippedEffects();
-          const boostedAmount = Math.floor(amount * (1 + effects.xpBoost));
-          let newXp = state.character.xp + boostedAmount;
-          let newLevel = state.character.level;
-          let xpToNext = state.character.xpToNextLevel;
+      stopAutoBattle: () => {
+        set({ isAutoBattling: false });
+      },
 
-          // Level up logic
-          while (newXp >= xpToNext) {
-            newXp -= xpToNext;
-            newLevel++;
-            xpToNext = calculateXpForLevel(newLevel + 1);
+      togglePause: () => {
+        set(state => ({ isPaused: !state.isPaused }));
+      },
 
-            // Stat boost on level up
-            const statKeys = ['wisdom', 'focus', 'creativity', 'persistence'] as const;
-            const randomStat = statKeys[Math.floor(Math.random() * statKeys.length)];
-            state.character.stats[randomStat] += 1;
+      gameTick: (deltaTime) => {
+        const state = get();
+        if (!state.isAutoBattling || state.isPaused) return;
+
+        const adjustedDelta = deltaTime * state.combatSpeed;
+
+        // Update ability cooldowns
+        const hero = { ...state.hero };
+        hero.abilities = hero.abilities.map(ability => ({
+          ...ability,
+          currentCooldown: Math.max(0, ability.currentCooldown - adjustedDelta)
+        }));
+
+        // Update buff durations
+        hero.activeBuffs = hero.activeBuffs
+          .map(buff => ({
+            ...buff,
+            remainingDuration: buff.remainingDuration - adjustedDelta
+          }))
+          .filter(buff => buff.remainingDuration > 0);
+
+        // Recalculate stats with buffs
+        get().recalculateStats();
+
+        // Player attacks
+        const attackInterval = 1 / hero.stats.attackSpeed;
+        const timeSinceLastTick = adjustedDelta;
+
+        if (Math.random() < timeSinceLastTick / attackInterval) {
+          get().playerAttack();
+        }
+
+        // Mob attacks
+        const mobs = state.currentMobs.map(mob => {
+          const newCooldown = mob.attackCooldown - adjustedDelta;
+          if (newCooldown <= 0) {
+            get().mobAttack(mob);
+            return { ...mob, attackCooldown: 1 / mob.attackSpeed };
           }
+          return { ...mob, attackCooldown: newCooldown };
+        });
 
-          return {
-            character: {
-              ...state.character,
-              xp: newXp,
-              level: newLevel,
-              xpToNextLevel: xpToNext
-            }
-          };
+        // Evaluate automation scripts
+        get().evaluateScripts();
+
+        // Update mana regeneration
+        hero.stats.mana = Math.min(
+          hero.stats.maxMana,
+          hero.stats.mana + adjustedDelta * 2
+        );
+
+        set({
+          hero,
+          currentMobs: mobs,
+          lastTick: Date.now(),
+          totalPlayTime: state.totalPlayTime + deltaTime
         });
       },
 
-      addGold: (amount) => {
-        set((state) => {
-          const effects = get().getEquippedEffects();
-          const boostedAmount = Math.floor(amount * (1 + effects.goldBoost));
-          return {
-            character: {
-              ...state.character,
-              gold: state.character.gold + boostedAmount
-            }
-          };
-        });
+      spawnMob: () => {
+        const state = get();
+        if (!state.currentZone) return;
+
+        // Pick random mob from zone pool
+        const pool = state.currentZone.mobPool;
+        const totalWeight = pool.reduce((sum, m) => sum + m.spawnWeight, 0);
+        let roll = Math.random() * totalWeight;
+
+        let template = pool[0];
+        for (const mob of pool) {
+          roll -= mob.spawnWeight;
+          if (roll <= 0) {
+            template = mob;
+            break;
+          }
+        }
+
+        const mobStats = calculateMobStats(template, state.currentZone.level);
+        const newMob: Mob = {
+          ...mobStats,
+          instanceId: generateInstanceId(),
+          attackCooldown: 1 / template.attackSpeed
+        };
+
+        set({ currentMobs: [...state.currentMobs, newMob] });
       },
 
-      addItem: (item) => {
-        set((state) => ({
-          character: {
-            ...state.character,
-            inventory: [...state.character.inventory, item]
+      playerAttack: () => {
+        const state = get();
+        if (state.currentMobs.length === 0) return;
+
+        const target = state.currentMobs[0];
+        const { damage, isCrit } = calculateDamage(
+          state.hero.stats.attack,
+          target.defense,
+          state.hero.stats.critChance,
+          state.hero.stats.critDamage
+        );
+
+        // Apply damage
+        const newHp = target.hp - damage;
+
+        // Lifesteal
+        if (state.hero.stats.lifeSteal > 0) {
+          const healAmount = Math.floor(damage * state.hero.stats.lifeSteal);
+          set(s => ({
+            hero: {
+              ...s.hero,
+              stats: {
+                ...s.hero.stats,
+                hp: Math.min(s.hero.stats.maxHp, s.hero.stats.hp + healAmount)
+              }
+            }
+          }));
+        }
+
+        // Log
+        get().addLogEntry({
+          type: isCrit ? 'player_crit' : 'player_attack',
+          message: isCrit
+            ? `CRIT! You dealt ${damage} damage to ${target.name}!`
+            : `You dealt ${damage} damage to ${target.name}`,
+          value: damage,
+          color: isCrit ? '#F59E0B' : '#22C55E'
+        });
+
+        // Update stats
+        set(s => ({
+          totalDamageDealt: s.totalDamageDealt + damage,
+          highestHit: Math.max(s.highestHit, damage)
+        }));
+
+        if (newHp <= 0) {
+          get().killMob(target.instanceId);
+        } else {
+          set(s => ({
+            currentMobs: s.currentMobs.map(m =>
+              m.instanceId === target.instanceId ? { ...m, hp: newHp } : m
+            )
+          }));
+        }
+      },
+
+      mobAttack: (mob) => {
+        const state = get();
+        const { damage } = calculateDamage(
+          mob.attack,
+          state.hero.stats.defense,
+          0.05,
+          1.5
+        );
+
+        const newHp = state.hero.stats.hp - damage;
+
+        get().addLogEntry({
+          type: 'enemy_attack',
+          message: `${mob.name} dealt ${damage} damage to you`,
+          value: damage,
+          color: '#EF4444'
+        });
+
+        if (newHp <= 0) {
+          // Player died
+          get().addLogEntry({
+            type: 'death',
+            message: 'You were defeated! Respawning...',
+            color: '#DC2626'
+          });
+
+          // Respawn with full HP
+          set(s => ({
+            hero: {
+              ...s.hero,
+              stats: {
+                ...s.hero.stats,
+                hp: s.hero.stats.maxHp,
+                mana: s.hero.stats.maxMana
+              }
+            },
+            currentMobs: []
+          }));
+
+          setTimeout(() => get().spawnMob(), 1000);
+        } else {
+          set(s => ({
+            hero: {
+              ...s.hero,
+              stats: {
+                ...s.hero.stats,
+                hp: newHp
+              }
+            }
+          }));
+        }
+      },
+
+      useAbility: (abilityId) => {
+        const state = get();
+        const abilityIndex = state.hero.abilities.findIndex(a => a.id === abilityId);
+        if (abilityIndex === -1) return;
+
+        const ability = state.hero.abilities[abilityIndex];
+        if (ability.currentCooldown > 0) return;
+        if (state.hero.stats.mana < ability.manaCost) return;
+
+        // Deduct mana and start cooldown
+        const updatedAbilities = [...state.hero.abilities];
+        updatedAbilities[abilityIndex] = {
+          ...ability,
+          currentCooldown: ability.cooldown
+        };
+
+        set(s => ({
+          hero: {
+            ...s.hero,
+            stats: {
+              ...s.hero.stats,
+              mana: s.hero.stats.mana - ability.manaCost
+            },
+            abilities: updatedAbilities
           }
         }));
-      },
 
-      equipItem: (itemId) => {
-        set((state) => {
-          const item = state.character.inventory.find((i) => i.id === itemId);
-          if (!item) return state;
+        // Apply effect
+        const effect = ability.effect;
 
-          // Check if we already have an item of same effect type equipped
-          const sameTypeEquipped = state.character.equippedItems.find(
-            (i) => i.effect.type === item.effect.type
-          );
+        if (effect.type === 'damage') {
+          const baseDamage = effect.value + state.hero.stats.attack * effect.scaling;
+          if (state.currentMobs.length > 0) {
+            const target = state.currentMobs[0];
+            const newHp = target.hp - baseDamage;
 
-          if (sameTypeEquipped) {
-            // Unequip the old one first
-            return {
-              character: {
-                ...state.character,
-                equippedItems: [
-                  ...state.character.equippedItems.filter((i) => i.id !== sameTypeEquipped.id),
-                  { ...item, equipped: true }
-                ],
-                inventory: state.character.inventory.map((i) =>
-                  i.id === itemId ? { ...i, equipped: true } : i.id === sameTypeEquipped.id ? { ...i, equipped: false } : i
+            get().addLogEntry({
+              type: 'ability',
+              message: `${ability.emoji} ${ability.name} dealt ${Math.floor(baseDamage)} damage!`,
+              value: baseDamage,
+              color: '#A855F7'
+            });
+
+            if (newHp <= 0) {
+              get().killMob(target.instanceId);
+            } else {
+              set(s => ({
+                currentMobs: s.currentMobs.map(m =>
+                  m.instanceId === target.instanceId ? { ...m, hp: newHp } : m
                 )
-              }
-            };
-          }
-
-          return {
-            character: {
-              ...state.character,
-              equippedItems: [...state.character.equippedItems, { ...item, equipped: true }],
-              inventory: state.character.inventory.map((i) =>
-                i.id === itemId ? { ...i, equipped: true } : i
-              )
+              }));
             }
-          };
-        });
+          }
+        } else if (effect.type === 'heal') {
+          const healAmount = effect.value + state.hero.stats.maxHp * effect.scaling;
+          set(s => ({
+            hero: {
+              ...s.hero,
+              stats: {
+                ...s.hero.stats,
+                hp: Math.min(s.hero.stats.maxHp, s.hero.stats.hp + healAmount)
+              }
+            }
+          }));
+
+          get().addLogEntry({
+            type: 'heal',
+            message: `${ability.emoji} ${ability.name} healed ${Math.floor(healAmount)} HP!`,
+            value: healAmount,
+            color: '#22C55E'
+          });
+        } else if (effect.type === 'buff') {
+          set(s => ({
+            hero: {
+              ...s.hero,
+              activeBuffs: [
+                ...s.hero.activeBuffs,
+                {
+                  id: `${abilityId}-${Date.now()}`,
+                  stat: effect.stat,
+                  value: effect.value,
+                  remainingDuration: effect.duration,
+                  maxDuration: effect.duration
+                }
+              ]
+            }
+          }));
+
+          get().addLogEntry({
+            type: 'buff',
+            message: `${ability.emoji} ${ability.name} activated!`,
+            color: '#6366F1'
+          });
+        } else if (effect.type === 'aoe' && effect.hitAll) {
+          const mobs = state.currentMobs;
+          const updatedMobs: Mob[] = [];
+          const killedMobs: string[] = [];
+
+          mobs.forEach(mob => {
+            const newHp = mob.hp - effect.damage;
+            if (newHp <= 0) {
+              killedMobs.push(mob.instanceId);
+            } else {
+              updatedMobs.push({ ...mob, hp: newHp });
+            }
+          });
+
+          set({ currentMobs: updatedMobs });
+
+          get().addLogEntry({
+            type: 'ability',
+            message: `${ability.emoji} ${ability.name} hit ${mobs.length} enemies for ${effect.damage} each!`,
+            color: '#F97316'
+          });
+
+          killedMobs.forEach(id => get().killMob(id));
+        } else if (effect.type === 'execute') {
+          if (state.currentMobs.length > 0) {
+            const target = state.currentMobs[0];
+            const hpPercent = target.hp / target.maxHp;
+            const damage = hpPercent < effect.threshold
+              ? state.hero.stats.attack * effect.bonusDamage
+              : state.hero.stats.attack;
+
+            const newHp = target.hp - damage;
+
+            get().addLogEntry({
+              type: 'ability',
+              message: hpPercent < effect.threshold
+                ? `${ability.emoji} EXECUTE! ${Math.floor(damage)} damage!`
+                : `${ability.emoji} ${ability.name} dealt ${Math.floor(damage)} damage`,
+              value: damage,
+              color: '#DC2626'
+            });
+
+            if (newHp <= 0) {
+              get().killMob(target.instanceId);
+            } else {
+              set(s => ({
+                currentMobs: s.currentMobs.map(m =>
+                  m.instanceId === target.instanceId ? { ...m, hp: newHp } : m
+                )
+              }));
+            }
+          }
+        }
+
+        // Update learn tasks
+        get().updateLearnTasks('use_ability');
       },
 
-      unequipItem: (itemId) => {
-        set((state) => ({
-          character: {
-            ...state.character,
-            equippedItems: state.character.equippedItems.filter((i) => i.id !== itemId),
-            inventory: state.character.inventory.map((i) =>
-              i.id === itemId ? { ...i, equipped: false } : i
+      killMob: (mobInstanceId) => {
+        const state = get();
+        const mob = state.currentMobs.find(m => m.instanceId === mobInstanceId);
+        if (!mob) return;
+
+        // Remove mob
+        set(s => ({
+          currentMobs: s.currentMobs.filter(m => m.instanceId !== mobInstanceId)
+        }));
+
+        // Rewards
+        get().addXp(mob.xpReward);
+        get().addGold(mob.goldReward);
+
+        get().addLogEntry({
+          type: 'xp',
+          message: `${mob.emoji} ${mob.name} defeated! +${mob.xpReward} XP`,
+          value: mob.xpReward,
+          color: '#FBBF24'
+        });
+
+        // Update kill count
+        set(s => ({
+          killCount: s.killCount + 1,
+          sessionKills: s.sessionKills + 1
+        }));
+
+        // Update learn tasks
+        get().updateLearnTasks('kill_count');
+
+        // Boss defeated
+        if (mob.isBoss) {
+          set(s => ({
+            bossesDefeated: [...s.bossesDefeated, mob.id]
+          }));
+
+          get().addLogEntry({
+            type: 'level_up',
+            message: `BOSS DEFEATED: ${mob.name}!`,
+            color: '#F97316'
+          });
+
+          get().updateLearnTasks('defeat_boss');
+
+          // Check zone unlocks
+          const zones = get().zones;
+          zones.forEach(zone => {
+            if (!zone.unlocked && zone.requiredBossKill === mob.id) {
+              const hero = get().hero;
+              const meetsLevel = !zone.requiredLevel || hero.level >= zone.requiredLevel;
+              if (meetsLevel) {
+                get().unlockZone(zone.id);
+              }
+            }
+          });
+        }
+
+        // Loot drop
+        if (state.autoLoot && state.currentZone) {
+          const drop = generateEquipmentDrop(state.currentZone.level);
+          if (drop && Math.random() < 0.15) {
+            get().addToInventory(drop);
+            get().addLogEntry({
+              type: 'loot',
+              message: `${drop.emoji} ${drop.name} dropped!`,
+              color: drop.rarity === 'legendary' ? '#F97316' :
+                     drop.rarity === 'epic' ? '#A855F7' :
+                     drop.rarity === 'rare' ? '#3B82F6' : '#22C55E'
+            });
+          }
+        }
+
+        // Spawn next mob
+        if (state.currentMobs.length <= 1) {
+          setTimeout(() => get().spawnMob(), 500);
+        }
+      },
+
+      // ============ SCRIPTS ============
+
+      toggleScript: (scriptId) => {
+        set(s => ({
+          hero: {
+            ...s.hero,
+            scripts: s.hero.scripts.map(script =>
+              script.id === scriptId ? { ...script, enabled: !script.enabled } : script
             )
           }
         }));
       },
 
-      addSkillXp: (skillId, amount) => {
-        set((state) => {
-          const skills = state.skills.map((skill) => {
-            if (skill.id !== skillId) return skill;
-
-            let newXp = skill.currentXp + amount;
-            let newLevel = skill.level;
-
-            // Level up skill
-            while (newXp >= skill.xpRequired && newLevel < skill.maxLevel) {
-              newXp -= skill.xpRequired;
-              newLevel++;
-            }
-
-            // Check if this unlocks other skills
-            if (newLevel > skill.level) {
-              // Unlock dependent skills
-              state.skills.forEach((s) => {
-                if (s.prerequisiteIds.includes(skillId)) {
-                  const allPrereqsMet = s.prerequisiteIds.every((prereqId) => {
-                    const prereq = state.skills.find((ps) => ps.id === prereqId);
-                    return prereq && prereq.level >= 1;
-                  });
-                  if (allPrereqsMet) {
-                    s.unlocked = true;
-                  }
-                }
-              });
-            }
-
-            return {
-              ...skill,
-              currentXp: newXp,
-              level: newLevel
-            };
-          });
-
-          // Re-check unlocks for all skills
-          const updatedSkills = skills.map((skill) => {
-            if (skill.unlocked) return skill;
-
-            const allPrereqsMet = skill.prerequisiteIds.every((prereqId) => {
-              const prereq = skills.find((s) => s.id === prereqId);
-              return prereq && prereq.level >= 1;
-            });
-
-            return {
-              ...skill,
-              unlocked: allPrereqsMet || skill.prerequisiteIds.length === 0
-            };
-          });
-
-          return { skills: updatedSkills };
-        });
-      },
-
-      unlockSkill: (skillId) => {
-        set((state) => ({
-          skills: state.skills.map((skill) =>
-            skill.id === skillId ? { ...skill, unlocked: true } : skill
-          )
-        }));
-      },
-
-      completeChallenge: (challengeId, correct, skillId) => {
-        const state = get();
-        const streakBonus = Math.min(state.currentStreak * 0.05, 0.5); // Max 50% bonus
-
-        const baseXp = correct ? 25 : 5;
-        const baseGold = correct ? 10 : 2;
-
-        const xpEarned = Math.floor(baseXp * (1 + streakBonus));
-        const goldEarned = Math.floor(baseGold * (1 + streakBonus));
-
-        // Roll for item drop
-        const itemDropped = correct && Math.random() < 0.3 ? rollForItem() : null;
-
-        // Update state
-        if (correct) {
-          get().addXp(xpEarned);
-          get().addGold(goldEarned);
-          get().addSkillXp(skillId, Math.floor(xpEarned * 0.8));
-
-          if (itemDropped) {
-            get().addItem(itemDropped);
-          }
-
-          // Add to review queue for spaced repetition
-          get().addToReviewQueue(challengeId);
-
-          set((state) => ({
-            completedChallenges: [...new Set([...state.completedChallenges, challengeId])],
-            currentStreak: state.currentStreak + 1
-          }));
-        } else {
-          // Still give minimal XP for trying
-          get().addXp(xpEarned);
-
-          set((state) => ({
-            currentStreak: 0
-          }));
-        }
-
-        const messages = correct
-          ? [
-              'Excellent work!',
-              'You\'re on fire!',
-              'Perfect execution!',
-              'Knowledge gained!',
-              'Skill increased!'
-            ]
-          : [
-              'Keep trying!',
-              'Learning from mistakes...',
-              'Almost there!',
-              'Don\'t give up!'
-            ];
-
-        return {
-          correct,
-          xpEarned,
-          goldEarned,
-          itemDropped: itemDropped || undefined,
-          skillProgress: { skillId, xpGained: Math.floor(xpEarned * 0.8) },
-          streakBonus: correct ? streakBonus : undefined,
-          message: messages[Math.floor(Math.random() * messages.length)]
-        };
-      },
-
-      getAvailableChallenges: () => {
-        const state = get();
-        const unlockedSkillCategories = state.skills
-          .filter((s) => s.unlocked)
-          .map((s) => s.category);
-
-        // Return challenge IDs for unlocked skill categories
-        return unlockedSkillCategories;
-      },
-
-      addToReviewQueue: (challengeId) => {
-        set((state) => {
-          const existing = state.reviewQueue.find((r) => r.challengeId === challengeId);
-          if (existing) return state;
-
-          const now = Date.now();
-          const newReview: ReviewItem = {
-            challengeId,
-            lastReviewed: now,
-            nextReview: now + 24 * 60 * 60 * 1000, // 1 day
-            interval: 1,
-            easeFactor: 2.5,
-            repetitions: 0
-          };
-
-          return {
-            reviewQueue: [...state.reviewQueue, newReview]
-          };
-        });
-      },
-
-      updateReviewItem: (challengeId, correct) => {
-        set((state) => {
-          const reviewQueue = state.reviewQueue.map((item) => {
-            if (item.challengeId !== challengeId) return item;
-
-            const now = Date.now();
-
-            if (correct) {
-              // SM-2 algorithm simplified
-              const newInterval = item.repetitions === 0
-                ? 1
-                : item.repetitions === 1
-                  ? 6
-                  : Math.round(item.interval * item.easeFactor);
-
-              return {
-                ...item,
-                lastReviewed: now,
-                nextReview: now + newInterval * 24 * 60 * 60 * 1000,
-                interval: newInterval,
-                easeFactor: Math.max(1.3, item.easeFactor + 0.1),
-                repetitions: item.repetitions + 1
-              };
-            } else {
-              // Reset on failure
-              return {
-                ...item,
-                lastReviewed: now,
-                nextReview: now + 24 * 60 * 60 * 1000,
-                interval: 1,
-                easeFactor: Math.max(1.3, item.easeFactor - 0.2),
-                repetitions: 0
-              };
-            }
-          });
-
-          return { reviewQueue };
-        });
-      },
-
-      getDueReviews: () => {
+      evaluateScripts: () => {
         const state = get();
         const now = Date.now();
-        return state.reviewQueue.filter((r) => r.nextReview <= now);
-      },
 
-      setActiveQuest: (quest) => {
-        set({ activeQuest: quest });
-      },
+        // Sort by priority
+        const sortedScripts = [...state.hero.scripts]
+          .filter(s => s.enabled)
+          .sort((a, b) => b.priority - a.priority);
 
-      updateQuestProgress: () => {
-        set((state) => {
-          if (!state.activeQuest) return state;
+        for (const script of sortedScripts) {
+          // Check cooldown
+          if (now - script.lastTriggered < script.cooldown * 1000) continue;
 
-          const completedCount = state.activeQuest.challenges.filter((id) =>
-            state.completedChallenges.includes(id)
-          ).length;
+          // Evaluate condition
+          let conditionMet = false;
+          const hero = state.hero;
+          const mob = state.currentMobs[0];
 
-          const progress = completedCount / state.activeQuest.challenges.length;
-
-          if (progress >= 1) {
-            // Quest complete!
-            get().addXp(state.activeQuest.xpReward);
-            get().addGold(state.activeQuest.goldReward);
-
-            return {
-              activeQuest: {
-                ...state.activeQuest,
-                completed: true,
-                progress: 1
-              }
-            };
+          switch (script.condition.type) {
+            case 'hp_below':
+              conditionMet = (hero.stats.hp / hero.stats.maxHp) < (script.condition.percent / 100);
+              break;
+            case 'hp_above':
+              conditionMet = (hero.stats.hp / hero.stats.maxHp) > (script.condition.percent / 100);
+              break;
+            case 'mana_above':
+              conditionMet = (hero.stats.mana / hero.stats.maxMana) > (script.condition.percent / 100);
+              break;
+            case 'enemy_hp_below':
+              conditionMet = mob ? (mob.hp / mob.maxHp) < (script.condition.percent / 100) : false;
+              break;
+            case 'ability_ready':
+              const abilityCondition = script.condition as { type: 'ability_ready'; abilityId: string };
+              const ability = hero.abilities.find(a => a.id === abilityCondition.abilityId);
+              conditionMet = ability ? ability.currentCooldown <= 0 && hero.stats.mana >= ability.manaCost : false;
+              break;
+            case 'on_kill':
+              // This would be triggered differently
+              break;
+            case 'always':
+              conditionMet = true;
+              break;
           }
 
+          if (!conditionMet) continue;
+
+          // Execute action
+          if (script.action.type === 'use_ability') {
+            get().useAbility(script.action.abilityId);
+
+            // Update script trigger count
+            set(s => ({
+              hero: {
+                ...s.hero,
+                scripts: s.hero.scripts.map(sc =>
+                  sc.id === script.id
+                    ? { ...sc, lastTriggered: now, triggerCount: sc.triggerCount + 1 }
+                    : sc
+                )
+              }
+            }));
+
+            get().addLogEntry({
+              type: 'script',
+              message: `[Script] ${script.name} triggered`,
+              color: '#6366F1'
+            });
+
+            get().updateLearnTasks('trigger_script');
+
+            break; // Only one script per tick
+          }
+        }
+      },
+
+      // ============ PROGRESSION ============
+
+      addXp: (amount) => {
+        set(s => ({
+          hero: {
+            ...s.hero,
+            xp: s.hero.xp + amount
+          },
+          totalXpEarned: s.totalXpEarned + amount
+        }));
+        get().checkLevelUp();
+
+        // Add XP to concepts that are being learned
+        const concepts = get().concepts;
+        const activeConcept = concepts.find(c => !c.learned && c.prerequisites.every(
+          prereqId => concepts.find(p => p.id === prereqId)?.learned
+        ));
+
+        if (activeConcept) {
+          get().addConceptXp(activeConcept.id, Math.floor(amount * 0.5));
+        }
+      },
+
+      addGold: (amount) => {
+        set(s => ({
+          hero: {
+            ...s.hero,
+            gold: s.hero.gold + amount
+          },
+          totalGoldEarned: s.totalGoldEarned + amount
+        }));
+      },
+
+      checkLevelUp: () => {
+        const state = get();
+        let hero = { ...state.hero };
+        let leveledUp = false;
+
+        while (hero.xp >= hero.xpToNextLevel) {
+          hero.xp -= hero.xpToNextLevel;
+          hero.level++;
+          hero.xpToNextLevel = calculateXpForLevel(hero.level + 1);
+          leveledUp = true;
+
+          // Stat increases on level up
+          hero.baseStats.maxHp += 10;
+          hero.baseStats.attack += 2;
+          hero.baseStats.defense += 1;
+          hero.baseStats.maxMana += 5;
+        }
+
+        if (leveledUp) {
+          // Restore HP/mana on level up
+          hero.stats.hp = hero.baseStats.maxHp;
+          hero.stats.mana = hero.baseStats.maxMana;
+
+          set({ hero });
+          get().recalculateStats();
+
+          get().addLogEntry({
+            type: 'level_up',
+            message: `LEVEL UP! You are now level ${hero.level}!`,
+            color: '#FBBF24'
+          });
+
+          // Check zone unlocks
+          const zones = get().zones;
+          zones.forEach(zone => {
+            if (!zone.unlocked && zone.requiredLevel && hero.level >= zone.requiredLevel) {
+              const bossReq = zone.requiredBossKill;
+              const bossDefeated = !bossReq || get().bossesDefeated.includes(bossReq);
+              if (bossDefeated) {
+                get().unlockZone(zone.id);
+              }
+            }
+          });
+        }
+      },
+
+      // ============ ZONES ============
+
+      changeZone: (zoneId) => {
+        const zone = get().zones.find(z => z.id === zoneId);
+        if (!zone || !zone.unlocked) return;
+
+        set({
+          currentZone: zone,
+          currentMobs: []
+        });
+
+        get().addLogEntry({
+          type: 'zone',
+          message: `Entered ${zone.name}`,
+          color: '#22C55E'
+        });
+
+        get().updateLearnTasks('reach_zone');
+        get().spawnMob();
+      },
+
+      unlockZone: (zoneId) => {
+        set(s => ({
+          zones: s.zones.map(z =>
+            z.id === zoneId ? { ...z, unlocked: true } : z
+          )
+        }));
+
+        const zone = get().zones.find(z => z.id === zoneId);
+        if (zone) {
+          get().addLogEntry({
+            type: 'zone',
+            message: `NEW ZONE UNLOCKED: ${zone.name}!`,
+            color: '#F59E0B'
+          });
+        }
+      },
+
+      summonBoss: () => {
+        const state = get();
+        if (!state.currentZone?.bossId) return;
+
+        const bossTemplate = state.currentZone.mobPool.find(m => m.isBoss);
+        if (!bossTemplate) return;
+
+        const bossStats = calculateMobStats(bossTemplate, state.currentZone.level);
+        const boss: Mob = {
+          ...bossStats,
+          instanceId: generateInstanceId(),
+          attackCooldown: 1 / bossTemplate.attackSpeed
+        };
+
+        set({ currentMobs: [boss] });
+
+        get().addLogEntry({
+          type: 'zone',
+          message: `BOSS APPEARED: ${boss.name}!`,
+          color: '#DC2626'
+        });
+      },
+
+      // ============ EQUIPMENT ============
+
+      equipItem: (itemId) => {
+        const state = get();
+        const item = state.inventory.find(i => i.id === itemId);
+        if (!item) return;
+
+        // Unequip current item in slot
+        const currentEquipped = state.hero.equipment[item.type];
+        if (currentEquipped) {
+          get().unequipSlot(item.type);
+        }
+
+        // Remove from inventory and equip
+        set(s => ({
+          inventory: s.inventory.filter(i => i.id !== itemId),
+          hero: {
+            ...s.hero,
+            equipment: {
+              ...s.hero.equipment,
+              [item.type]: item
+            }
+          }
+        }));
+
+        get().recalculateStats();
+
+        get().addLogEntry({
+          type: 'loot',
+          message: `Equipped ${item.emoji} ${item.name}`,
+          color: '#3B82F6'
+        });
+      },
+
+      unequipSlot: (slot) => {
+        const state = get();
+        const item = state.hero.equipment[slot];
+        if (!item) return;
+
+        set(s => ({
+          inventory: [...s.inventory, item],
+          hero: {
+            ...s.hero,
+            equipment: {
+              ...s.hero.equipment,
+              [slot]: null
+            }
+          }
+        }));
+
+        get().recalculateStats();
+      },
+
+      addToInventory: (equipment) => {
+        const state = get();
+        if (state.inventory.length >= state.maxInventorySize) {
+          get().addLogEntry({
+            type: 'loot',
+            message: 'Inventory full! Item lost.',
+            color: '#EF4444'
+          });
+          return;
+        }
+
+        set(s => ({
+          inventory: [...s.inventory, equipment]
+        }));
+      },
+
+      sellItem: (itemId) => {
+        const state = get();
+        const item = state.inventory.find(i => i.id === itemId);
+        if (!item) return;
+
+        const value = item.level * 10 * (
+          item.rarity === 'legendary' ? 10 :
+          item.rarity === 'epic' ? 5 :
+          item.rarity === 'rare' ? 3 :
+          item.rarity === 'uncommon' ? 2 : 1
+        );
+
+        set(s => ({
+          inventory: s.inventory.filter(i => i.id !== itemId)
+        }));
+
+        get().addGold(value);
+
+        get().addLogEntry({
+          type: 'gold',
+          message: `Sold ${item.name} for ${value} gold`,
+          color: '#FBBF24'
+        });
+      },
+
+      recalculateStats: () => {
+        set(s => {
+          const hero = { ...s.hero };
+          const base = hero.baseStats;
+
+          // Start with base stats
+          const stats: CombatStats = { ...base };
+
+          // Add equipment stats
+          Object.values(hero.equipment).forEach(item => {
+            if (item?.stats) {
+              Object.entries(item.stats).forEach(([key, value]) => {
+                const statKey = key as keyof CombatStats;
+                stats[statKey] = (stats[statKey] || 0) + (value || 0);
+              });
+            }
+          });
+
+          // Add concept bonuses
+          s.concepts.filter(c => c.learned).forEach(concept => {
+            Object.entries(concept.statBonus).forEach(([key, value]) => {
+              const statKey = key as keyof CombatStats;
+              stats[statKey] = (stats[statKey] || 0) + (value || 0);
+            });
+          });
+
+          // Add buff bonuses
+          hero.activeBuffs.forEach(buff => {
+            stats[buff.stat] = (stats[buff.stat] || 0) + buff.value;
+          });
+
+          // Keep current HP/mana ratios
+          const hpRatio = hero.stats.hp / hero.stats.maxHp;
+          const manaRatio = hero.stats.mana / hero.stats.maxMana;
+
+          stats.hp = Math.floor(stats.maxHp * hpRatio);
+          stats.mana = Math.floor(stats.maxMana * manaRatio);
+
           return {
-            activeQuest: {
-              ...state.activeQuest,
-              progress
+            hero: {
+              ...hero,
+              stats
             }
           };
         });
       },
 
-      updateStreak: () => {
-        set((state) => {
-          const today = new Date().toISOString().split('T')[0];
-          const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      // ============ CONCEPTS ============
 
-          if (state.lastPlayedDate === today) {
-            return state; // Already played today
-          }
+      addConceptXp: (conceptId, amount) => {
+        set(s => ({
+          concepts: s.concepts.map(c => {
+            if (c.id !== conceptId) return c;
 
-          if (state.lastPlayedDate === yesterday) {
-            // Consecutive day!
-            return {
-              currentStreak: state.currentStreak + 1,
-              lastPlayedDate: today
-            };
-          }
+            const newXp = c.currentXp + amount;
+            if (newXp >= c.xpToLearn && !c.learned) {
+              get().learnConcept(conceptId);
+            }
 
-          // Streak broken
-          return {
-            currentStreak: 1,
-            lastPlayedDate: today
-          };
-        });
-      },
-
-      addPlayTime: (minutes) => {
-        set((state) => ({
-          totalPlayTime: state.totalPlayTime + minutes
+            return { ...c, currentXp: newXp };
+          })
         }));
       },
 
-      completeTutorial: () => {
-        set({ tutorialComplete: true });
+      learnConcept: (conceptId) => {
+        set(s => {
+          const concept = s.concepts.find(c => c.id === conceptId);
+          if (!concept) return s;
+
+          // Unlock abilities
+          const newAbilities = [...s.hero.abilities];
+          ABILITIES.filter(a => a.requiredConcept === conceptId).forEach(ability => {
+            if (!newAbilities.find(a => a.id === ability.id)) {
+              newAbilities.push({ ...ability, unlocked: true });
+            }
+          });
+
+          return {
+            concepts: s.concepts.map(c =>
+              c.id === conceptId ? { ...c, learned: true } : c
+            ),
+            hero: {
+              ...s.hero,
+              abilities: newAbilities
+            }
+          };
+        });
+
+        get().recalculateStats();
+
+        const concept = get().concepts.find(c => c.id === conceptId);
+        if (concept) {
+          get().addLogEntry({
+            type: 'level_up',
+            message: `CONCEPT LEARNED: ${concept.name}!`,
+            color: '#A855F7'
+          });
+        }
       },
+
+      updateLearnTasks: (taskType, value = 1) => {
+        set(s => ({
+          concepts: s.concepts.map(concept => ({
+            ...concept,
+            learnByDoing: concept.learnByDoing.map(task => {
+              if (task.type !== taskType || task.completed) return task;
+
+              const newCurrent = task.current + value;
+              return {
+                ...task,
+                current: newCurrent,
+                completed: newCurrent >= task.target
+              };
+            })
+          }))
+        }));
+      },
+
+      // ============ COMBAT LOG ============
+
+      addLogEntry: (entry) => {
+        const newEntry: CombatLogEntry = {
+          ...entry,
+          id: generateInstanceId(),
+          timestamp: Date.now()
+        };
+
+        set(s => ({
+          combatLog: [newEntry, ...s.combatLog].slice(0, 100) // Keep last 100 entries
+        }));
+      },
+
+      clearLog: () => {
+        set({ combatLog: [] });
+      },
+
+      // ============ UTILITY ============
 
       resetGame: () => {
         set(getInitialState());
       },
 
-      getEquippedEffects: () => {
-        const state = get();
-        const effects = {
-          xpBoost: 0,
-          goldBoost: 0,
-          hints: 0,
-          retries: 0
-        };
-
-        state.character.equippedItems.forEach((item) => {
-          switch (item.effect.type) {
-            case 'xp_boost':
-              effects.xpBoost += item.effect.value;
-              break;
-            case 'gold_boost':
-              effects.goldBoost += item.effect.value;
-              break;
-            case 'hint_reveal':
-              effects.hints += item.effect.value;
-              break;
-            case 'second_chance':
-              effects.retries += item.effect.value;
-              break;
-          }
-        });
-
-        return effects;
+      setCombatSpeed: (speed) => {
+        set({ combatSpeed: speed });
       }
     }),
     {
-      name: 'codequest-game-storage',
-      version: 1
+      name: 'codequest-rpg-storage',
+      version: 2
     }
   )
 );

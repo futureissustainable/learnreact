@@ -1,142 +1,157 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { Challenge } from '@/types/game';
-import { getChallengesBySkill, getRandomChallenge, getChallengeById } from '@/data/challenges';
-
-// Components
-import { CharacterCreation } from '@/components/game/CharacterCreation';
+import { CombatArea } from '@/components/game/CombatArea';
+import { HeroPanel } from '@/components/game/HeroPanel';
+import { CombatLog } from '@/components/game/CombatLog';
+import { AbilitiesBar } from '@/components/game/AbilitiesBar';
+import { ScriptsPanel } from '@/components/game/ScriptsPanel';
+import { ZoneSelector } from '@/components/game/ZoneSelector';
+import { InventoryPanel } from '@/components/game/InventoryPanel';
+import { ConceptsPanel } from '@/components/game/ConceptsPanel';
 import { GameHeader } from '@/components/game/GameHeader';
-import { AdventureMode } from '@/components/game/AdventureMode';
-import { SkillTree } from '@/components/game/SkillTree';
-import { Inventory } from '@/components/game/Inventory';
-import { ReviewMode } from '@/components/game/ReviewMode';
-import { ChallengeModal } from '@/components/game/ChallengeModal';
-
-type TabType = 'adventure' | 'skills' | 'inventory' | 'review';
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabType>('adventure');
-  const [currentChallenge, setCurrentChallenge] = useState<Challenge | null>(null);
-  const [currentSkillId, setCurrentSkillId] = useState<string>('');
-  const [showCharacterCreation, setShowCharacterCreation] = useState(false);
+  const [heroName, setHeroName] = useState('');
+  const [activeTab, setActiveTab] = useState<'combat' | 'inventory' | 'scripts' | 'concepts'>('combat');
+  const gameLoopRef = useRef<number | null>(null);
 
-  const tutorialComplete = useGameStore((state) => state.tutorialComplete);
-  const updateStreak = useGameStore((state) => state.updateStreak);
-  const updateReviewItem = useGameStore((state) => state.updateReviewItem);
+  const initialized = useGameStore(s => s.initialized);
+  const isAutoBattling = useGameStore(s => s.isAutoBattling);
+  const initializeGame = useGameStore(s => s.initializeGame);
+  const gameTick = useGameStore(s => s.gameTick);
+  const startAutoBattle = useGameStore(s => s.startAutoBattle);
 
   // Handle hydration
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Update streak on mount
+  // Game loop
   useEffect(() => {
-    if (mounted && tutorialComplete) {
-      updateStreak();
-    }
-  }, [mounted, tutorialComplete, updateStreak]);
+    if (!mounted || !initialized) return;
 
-  // Show character creation for new players
-  useEffect(() => {
-    if (mounted && !tutorialComplete) {
-      setShowCharacterCreation(true);
-    }
-  }, [mounted, tutorialComplete]);
+    let lastTime = performance.now();
 
-  const handleStartChallenge = (skillId: string) => {
-    const challenges = getChallengesBySkill(skillId);
-    if (challenges.length === 0) {
-      // Fallback to random challenge
-      setCurrentChallenge(getRandomChallenge());
-    } else {
-      // Get a random challenge from available ones for this skill
-      const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)];
-      setCurrentChallenge(randomChallenge);
-    }
-    setCurrentSkillId(skillId);
-  };
+    const loop = (currentTime: number) => {
+      const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
+      lastTime = currentTime;
 
-  const handleStartReview = (challengeId: string) => {
-    const challenge = getChallengeById(challengeId);
-    if (challenge) {
-      setCurrentChallenge(challenge);
-      // Find the skill for this challenge
-      const skills = useGameStore.getState().skills;
-      const skill = skills.find(s => s.category === challenge.skillCategory);
-      setCurrentSkillId(skill?.id || '');
-    }
-  };
+      gameTick(deltaTime);
 
-  const handleChallengeComplete = () => {
-    if (currentChallenge) {
-      // Update review item if this was a review
-      const reviewQueue = useGameStore.getState().reviewQueue;
-      const isReview = reviewQueue.some(r => r.challengeId === currentChallenge.id);
-      if (isReview) {
-        updateReviewItem(currentChallenge.id, true);
+      gameLoopRef.current = requestAnimationFrame(loop);
+    };
+
+    if (isAutoBattling) {
+      gameLoopRef.current = requestAnimationFrame(loop);
+    }
+
+    return () => {
+      if (gameLoopRef.current) {
+        cancelAnimationFrame(gameLoopRef.current);
       }
-    }
-    setCurrentChallenge(null);
-    setCurrentSkillId('');
-  };
+    };
+  }, [mounted, initialized, isAutoBattling, gameTick]);
 
-  // Loading state for hydration
+  // Loading state
   if (!mounted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F2E9E4]">
+      <div className="min-h-screen flex items-center justify-center bg-[#22223B]">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-[#22223B] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[#4A4E69]">Loading CodeQuest...</p>
+          <div className="w-16 h-16 border-4 border-[#F2E9E4] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-[#C9ADA7]">Loading CodeQuest...</p>
         </div>
       </div>
     );
   }
 
-  // Character creation for new players
-  if (showCharacterCreation) {
+  // Character creation
+  if (!initialized) {
     return (
-      <CharacterCreation
-        onComplete={() => {
-          setShowCharacterCreation(false);
-          useGameStore.getState().completeTutorial();
-        }}
-      />
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-[#22223B] to-[#4A4E69]">
+        <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-2xl">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-[#22223B] mb-2">CodeQuest</h1>
+            <p className="text-[#4A4E69]">Learn JavaScript by automating your hero</p>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-[#4A4E69] mb-2">
+                Hero Name
+              </label>
+              <input
+                type="text"
+                value={heroName}
+                onChange={(e) => setHeroName(e.target.value)}
+                placeholder="Enter your name..."
+                maxLength={20}
+                className="w-full px-4 py-3 rounded-lg border-2 border-[#C9ADA7] focus:border-[#22223B] outline-none text-[#22223B] text-lg"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && heroName.trim()) {
+                    initializeGame(heroName.trim());
+                    startAutoBattle();
+                  }
+                }}
+              />
+            </div>
+
+            <button
+              onClick={() => {
+                if (heroName.trim()) {
+                  initializeGame(heroName.trim());
+                  startAutoBattle();
+                }
+              }}
+              disabled={!heroName.trim()}
+              className="w-full py-4 bg-[#22223B] text-white rounded-lg font-bold text-lg hover:bg-[#4A4E69] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Begin Adventure
+            </button>
+          </div>
+
+          <div className="mt-8 text-center text-sm text-[#9A8C98]">
+            <p>Kill mobs. Level up. Learn JavaScript.</p>
+            <p className="mt-1">Your automation scripts are your power.</p>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F2E9E4]">
+    <div className="min-h-screen bg-[#1a1a2e] text-white">
       <GameHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <main className="container-page py-6">
-        {activeTab === 'adventure' && (
-          <AdventureMode onStartChallenge={handleStartChallenge} />
+      <main className="container-page py-4">
+        {activeTab === 'combat' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Left Panel - Hero & Zone */}
+            <div className="lg:col-span-3 space-y-4">
+              <HeroPanel />
+              <ZoneSelector />
+            </div>
+
+            {/* Center - Combat */}
+            <div className="lg:col-span-6 space-y-4">
+              <CombatArea />
+              <AbilitiesBar />
+              <CombatLog />
+            </div>
+
+            {/* Right Panel - Scripts */}
+            <div className="lg:col-span-3">
+              <ScriptsPanel />
+            </div>
+          </div>
         )}
 
-        {activeTab === 'skills' && (
-          <SkillTree onStartChallenge={handleStartChallenge} />
-        )}
-
-        {activeTab === 'inventory' && <Inventory />}
-
-        {activeTab === 'review' && (
-          <ReviewMode onStartReview={handleStartReview} />
-        )}
+        {activeTab === 'inventory' && <InventoryPanel />}
+        {activeTab === 'scripts' && <ScriptsPanel fullWidth />}
+        {activeTab === 'concepts' && <ConceptsPanel />}
       </main>
-
-      {/* Challenge Modal */}
-      <ChallengeModal
-        challenge={currentChallenge}
-        skillId={currentSkillId}
-        onClose={() => {
-          setCurrentChallenge(null);
-          setCurrentSkillId('');
-        }}
-        onComplete={handleChallengeComplete}
-      />
     </div>
   );
 }

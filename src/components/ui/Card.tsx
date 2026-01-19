@@ -12,6 +12,7 @@ interface CardProps {
 
 const rarityStyles: Record<Rarity, string> = {
   common: 'border-[#9CA3AF]',
+  uncommon: 'border-[#22C55E] shadow-[0_0_10px_rgba(34,197,94,0.3)]',
   rare: 'border-[#3B82F6] shadow-[0_0_12px_rgba(59,130,246,0.3)]',
   epic: 'border-[#F97316] shadow-[0_0_16px_rgba(249,115,22,0.3)]',
   legendary: 'border-[#A855F7] shadow-[0_0_20px_rgba(168,85,247,0.4)]'
