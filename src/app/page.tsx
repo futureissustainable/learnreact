@@ -11,10 +11,12 @@ import { ZoneSelector } from '@/components/game/ZoneSelector';
 import { InventoryPanel } from '@/components/game/InventoryPanel';
 import { ConceptsPanel } from '@/components/game/ConceptsPanel';
 import { GameHeader } from '@/components/game/GameHeader';
+import { Onboarding } from '@/components/game/Onboarding';
+import { NextGoal } from '@/components/game/NextGoal';
+import { Notifications } from '@/components/game/Notifications';
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
-  const [heroName, setHeroName] = useState('');
   const [activeTab, setActiveTab] = useState<'combat' | 'inventory' | 'scripts' | 'concepts'>('combat');
   const gameLoopRef = useRef<number | null>(null);
 
@@ -55,6 +57,12 @@ export default function Home() {
     };
   }, [mounted, initialized, isAutoBattling, gameTick]);
 
+  // Handle onboarding completion
+  const handleOnboardingComplete = (heroName: string) => {
+    initializeGame(heroName);
+    startAutoBattle();
+  };
+
   // Loading state
   if (!mounted) {
     return (
@@ -67,62 +75,16 @@ export default function Home() {
     );
   }
 
-  // Character creation
+  // Onboarding for new players
   if (!initialized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-[#22223B] to-[#4A4E69]">
-        <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-2xl">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-[#22223B] mb-2">CodeQuest</h1>
-            <p className="text-[#4A4E69]">Learn JavaScript by automating your hero</p>
-          </div>
-
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-[#4A4E69] mb-2">
-                Hero Name
-              </label>
-              <input
-                type="text"
-                value={heroName}
-                onChange={(e) => setHeroName(e.target.value)}
-                placeholder="Enter your name..."
-                maxLength={20}
-                className="w-full px-4 py-3 rounded-lg border-2 border-[#C9ADA7] focus:border-[#22223B] outline-none text-[#22223B] text-lg"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && heroName.trim()) {
-                    initializeGame(heroName.trim());
-                    startAutoBattle();
-                  }
-                }}
-              />
-            </div>
-
-            <button
-              onClick={() => {
-                if (heroName.trim()) {
-                  initializeGame(heroName.trim());
-                  startAutoBattle();
-                }
-              }}
-              disabled={!heroName.trim()}
-              className="w-full py-4 bg-[#22223B] text-white rounded-lg font-bold text-lg hover:bg-[#4A4E69] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Begin Adventure
-            </button>
-          </div>
-
-          <div className="mt-8 text-center text-sm text-[#9A8C98]">
-            <p>Kill mobs. Level up. Learn JavaScript.</p>
-            <p className="mt-1">Your automation scripts are your power.</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <Onboarding onComplete={handleOnboardingComplete} />;
   }
 
   return (
     <div className="min-h-screen bg-[#1a1a2e] text-white">
+      {/* Notifications overlay */}
+      <Notifications />
+
       <GameHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
       <main className="container-page py-4">
@@ -131,6 +93,7 @@ export default function Home() {
             {/* Left Panel - Hero & Zone */}
             <div className="lg:col-span-3 space-y-4">
               <HeroPanel />
+              <NextGoal />
               <ZoneSelector />
             </div>
 
