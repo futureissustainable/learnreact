@@ -1098,7 +1098,14 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'codequest-rpg-storage',
-      version: 2
+      version: 3,
+      migrate: (persistedState: unknown, version: number) => {
+        // Force fresh state for old versions
+        if (version < 3) {
+          return getInitialState();
+        }
+        return persistedState as GameState;
+      }
     }
   )
 );

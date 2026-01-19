@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { calculateDPS } from '@/types/game';
-import { Skull, Lightning, Sword, Heart, Drop, Shield, Crosshair } from '@phosphor-icons/react';
+import { Skull, Lightning, Sword, Heart, Drop, Shield, Crosshair, Play, Pause } from '@phosphor-icons/react';
 
 export function CombatArea() {
   const hero = useGameStore(s => s.hero);
@@ -13,29 +13,57 @@ export function CombatArea() {
   const bossesDefeated = useGameStore(s => s.bossesDefeated);
   const killCount = useGameStore(s => s.killCount);
   const sessionKills = useGameStore(s => s.sessionKills);
+  const isAutoBattling = useGameStore(s => s.isAutoBattling);
+  const startAutoBattle = useGameStore(s => s.startAutoBattle);
+  const stopAutoBattle = useGameStore(s => s.stopAutoBattle);
+  const spawnMob = useGameStore(s => s.spawnMob);
 
   const [mobShake, setMobShake] = useState(false);
+  const [lastMobHp, setLastMobHp] = useState<number | null>(null);
 
   const mob = currentMobs[0];
   const dps = calculateDPS(hero.stats);
   const bossAvailable = currentZone?.bossId && !bossesDefeated.includes(currentZone.bossId);
 
-  // Animate when mob takes damage
+  // Ensure a mob spawns if none exist
   useEffect(() => {
-    if (mob) {
+    if (isAutoBattling && currentMobs.length === 0) {
+      const timer = setTimeout(() => spawnMob(), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isAutoBattling, currentMobs.length, spawnMob]);
+
+  // Track mob HP changes for shake animation
+  useEffect(() => {
+    if (mob && lastMobHp !== null && mob.hp < lastMobHp) {
       setMobShake(true);
       const timer = setTimeout(() => setMobShake(false), 150);
       return () => clearTimeout(timer);
     }
-  }, [mob?.hp]);
+    setLastMobHp(mob?.hp ?? null);
+  }, [mob?.hp, lastMobHp]);
 
   return (
     <div className="bg-[#1e1e2e] rounded-xl p-5 border border-[#313244]">
       {/* Zone Header */}
       <div className="flex items-center justify-between mb-5 pb-4 border-b border-[#313244]">
-        <div>
-          <h2 className="text-lg font-semibold text-[#cdd6f4]">{currentZone?.name}</h2>
-          <span className="text-sm text-[#6c7086]">Zone Level {currentZone?.level} • {sessionKills} kills</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => isAutoBattling ? stopAutoBattle() : startAutoBattle()}
+            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+              isAutoBattling
+                ? 'bg-[#a6e3a1]/20 text-[#a6e3a1]'
+                : 'bg-[#f9e2af]/20 text-[#f9e2af]'
+            }`}
+          >
+            {isAutoBattling ? <Pause size={20} weight="fill" /> : <Play size={20} weight="fill" />}
+          </button>
+          <div>
+            <h2 className="text-lg font-semibold text-[#cdd6f4]">{currentZone?.name}</h2>
+            <span className="text-sm text-[#6c7086]">
+              {isAutoBattling ? 'Fighting' : 'Paused'} • Lv.{currentZone?.level} • {sessionKills} kills
+            </span>
+          </div>
         </div>
 
         {bossAvailable && (
@@ -44,7 +72,7 @@ export function CombatArea() {
             className="flex items-center gap-2 px-4 py-2 bg-[#f38ba8] hover:bg-[#eba0ac] text-[#1e1e2e] rounded-lg font-medium text-sm transition-colors"
           >
             <Skull size={16} weight="fill" />
-            Summon Boss
+            Boss
           </button>
         )}
       </div>
