@@ -189,57 +189,66 @@ export const useGameStore = create<GameStore>()(
 
         const adjustedDelta = deltaTime * state.combatSpeed;
 
-        // Update ability cooldowns
-        const hero = { ...state.hero };
-        hero.abilities = hero.abilities.map(ability => ({
-          ...ability,
-          currentCooldown: Math.max(0, ability.currentCooldown - adjustedDelta)
+        // Update ability cooldowns and buffs first
+        set(s => ({
+          hero: {
+            ...s.hero,
+            abilities: s.hero.abilities.map(ability => ({
+              ...ability,
+              currentCooldown: Math.max(0, ability.currentCooldown - adjustedDelta)
+            })),
+            activeBuffs: s.hero.activeBuffs
+              .map(buff => ({
+                ...buff,
+                remainingDuration: buff.remainingDuration - adjustedDelta
+              }))
+              .filter(buff => buff.remainingDuration > 0),
+            stats: {
+              ...s.hero.stats,
+              mana: Math.min(s.hero.stats.maxMana, s.hero.stats.mana + adjustedDelta * 2)
+            }
+          },
+          lastTick: Date.now(),
+          totalPlayTime: s.totalPlayTime + deltaTime
         }));
-
-        // Update buff durations
-        hero.activeBuffs = hero.activeBuffs
-          .map(buff => ({
-            ...buff,
-            remainingDuration: buff.remainingDuration - adjustedDelta
-          }))
-          .filter(buff => buff.remainingDuration > 0);
 
         // Recalculate stats with buffs
         get().recalculateStats();
 
-        // Player attacks
+        // Player attacks based on attack speed
+        const hero = get().hero;
         const attackInterval = 1 / hero.stats.attackSpeed;
-        const timeSinceLastTick = adjustedDelta;
-
-        if (Math.random() < timeSinceLastTick / attackInterval) {
+        if (Math.random() < adjustedDelta / attackInterval) {
           get().playerAttack();
         }
 
-        // Mob attacks
-        const mobs = state.currentMobs.map(mob => {
+        // Update mob cooldowns and process attacks
+        const currentMobs = get().currentMobs;
+        currentMobs.forEach(mob => {
           const newCooldown = mob.attackCooldown - adjustedDelta;
           if (newCooldown <= 0) {
+            // Update cooldown first, then attack
+            set(s => ({
+              currentMobs: s.currentMobs.map(m =>
+                m.instanceId === mob.instanceId
+                  ? { ...m, attackCooldown: 1 / m.attackSpeed }
+                  : m
+              )
+            }));
             get().mobAttack(mob);
-            return { ...mob, attackCooldown: 1 / mob.attackSpeed };
+          } else {
+            set(s => ({
+              currentMobs: s.currentMobs.map(m =>
+                m.instanceId === mob.instanceId
+                  ? { ...m, attackCooldown: newCooldown }
+                  : m
+              )
+            }));
           }
-          return { ...mob, attackCooldown: newCooldown };
         });
 
         // Evaluate automation scripts
         get().evaluateScripts();
-
-        // Update mana regeneration
-        hero.stats.mana = Math.min(
-          hero.stats.maxMana,
-          hero.stats.mana + adjustedDelta * 2
-        );
-
-        set({
-          hero,
-          currentMobs: mobs,
-          lastTick: Date.now(),
-          totalPlayTime: state.totalPlayTime + deltaTime
-        });
       },
 
       spawnMob: () => {
