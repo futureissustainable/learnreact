@@ -232,12 +232,16 @@ export function CombatArea() {
         </div>
       </div>
 
-      {/* Combat Tips for new players */}
-      {killCount < 10 && (
-        <div className="mt-6 text-center">
-          <p className="text-sm text-white/40">
-            💡 Your hero auto-attacks! Watch the Scripts panel to see automation in action.
-          </p>
+      {/* Getting Started Guide for new players */}
+      {killCount < 5 && (
+        <div className="mt-6 p-4 bg-black/30 rounded-lg border border-cyan-500/30">
+          <h4 className="text-cyan-400 font-bold mb-2 text-sm">🎮 How Combat Works</h4>
+          <ul className="text-xs text-white/70 space-y-1">
+            <li>• <span className="text-green-400">Auto-Attack:</span> Your hero attacks automatically based on Attack Speed</li>
+            <li>• <span className="text-blue-400">Abilities:</span> Click ability buttons to use special attacks (costs Mana)</li>
+            <li>• <span className="text-purple-400">Scripts:</span> Enable automation scripts in the Scripts panel to auto-use abilities</li>
+            <li>• <span className="text-yellow-400">Progress:</span> Kill monsters → Earn XP & Gold → Level Up → Get Stronger!</li>
+          </ul>
         </div>
       )}
     </div>
