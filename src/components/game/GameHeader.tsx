@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { Sword, Backpack, Code, BookOpen, Play, Pause, ArrowCounterClockwise } from '@phosphor-icons/react';
+import { Sword, Backpack, Code, BookOpen, Play, Pause, ArrowCounterClockwise, Storefront } from '@phosphor-icons/react';
 
-type TabType = 'combat' | 'inventory' | 'scripts' | 'concepts';
+type TabType = 'combat' | 'inventory' | 'shop' | 'scripts' | 'concepts';
 
 interface GameHeaderProps {
   activeTab: TabType;
@@ -27,6 +27,7 @@ export function GameHeader({ activeTab, onTabChange }: GameHeaderProps) {
   const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: 'combat', label: 'Combat', icon: <Sword size={18} /> },
     { id: 'inventory', label: 'Inventory', icon: <Backpack size={18} /> },
+    { id: 'shop', label: 'Shop', icon: <Storefront size={18} /> },
     { id: 'scripts', label: 'Scripts', icon: <Code size={18} /> },
     { id: 'concepts', label: 'Learn', icon: <BookOpen size={18} /> }
   ];

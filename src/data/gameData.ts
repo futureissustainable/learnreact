@@ -534,13 +534,25 @@ export const EQUIPMENT: Record<string, Equipment> = {
 // ============ ABILITIES ============
 
 export const ABILITIES: Ability[] = [
+  // Basic attack - main damage source, no mana cost, short cooldown
+  {
+    id: 'attack',
+    name: 'Attack',
+    description: 'Basic attack. Click to deal damage!',
+    manaCost: 0,
+    cooldown: 1,
+    currentCooldown: 0,
+    effect: { type: 'damage', value: 0, scaling: 1.0 },
+    unlocked: true,
+    emoji: '⚔️'
+  },
   // Starter abilities
   {
     id: 'power-strike',
     name: 'Power Strike',
     description: 'A powerful attack dealing 150% damage.',
     manaCost: 10,
-    cooldown: 3,
+    cooldown: 4,
     currentCooldown: 0,
     effect: { type: 'damage', value: 0, scaling: 1.5 },
     unlocked: true,
@@ -551,7 +563,7 @@ export const ABILITIES: Ability[] = [
     name: 'Heal',
     description: 'Restore 30% of max HP.',
     manaCost: 20,
-    cooldown: 8,
+    cooldown: 10,
     currentCooldown: 0,
     effect: { type: 'heal', value: 0, scaling: 0.3 },
     unlocked: true,
@@ -634,35 +646,107 @@ export const ABILITIES: Ability[] = [
 ];
 
 // ============ DEFAULT SCRIPTS ============
+// Player starts with NO scripts - they must learn concepts to unlock script conditions/actions
+// and then BUILD their own automation. This is the core learning loop!
 
-export const DEFAULT_SCRIPTS: AutoScript[] = [
+export const DEFAULT_SCRIPTS: AutoScript[] = [];
+
+// ============ SHOP ITEMS ============
+// Items available for purchase with gold
+
+export const SHOP_ITEMS: Equipment[] = [
   {
-    id: 'auto-heal',
-    name: 'Auto Heal',
-    code: `if (player.hp < player.maxHp * 0.5) {\n  useAbility('heal');\n}`,
-    enabled: false,  // Disabled by default - let player enable
-    priority: 10,
-    condition: { type: 'hp_below', percent: 50 },
-    action: { type: 'use_ability', abilityId: 'heal' },
-    cooldown: 10,
-    lastTriggered: 0,
-    triggerCount: 0,
-    conceptsUsed: ['conditionals']
+    id: 'shop-wooden-sword',
+    name: 'Wooden Sword',
+    type: 'weapon',
+    rarity: 'common',
+    level: 1,
+    stats: { attack: 3 },
+    description: 'A basic wooden training sword.',
+    emoji: '🗡️'
   },
   {
-    id: 'power-strike-ready',
-    name: 'Power Strike on Cooldown',
-    code: `if (abilities.powerStrike.ready) {\n  useAbility('power-strike');\n}`,
-    enabled: false,  // Disabled by default - let player enable
-    priority: 5,
-    condition: { type: 'ability_ready', abilityId: 'power-strike' },
-    action: { type: 'use_ability', abilityId: 'power-strike' },
-    cooldown: 3,  // 3 second cooldown to prevent spam
-    lastTriggered: 0,
-    triggerCount: 0,
-    conceptsUsed: ['conditionals']
+    id: 'shop-leather-armor',
+    name: 'Leather Armor',
+    type: 'armor',
+    rarity: 'common',
+    level: 1,
+    stats: { defense: 3, maxHp: 20 },
+    description: 'Simple leather protection.',
+    emoji: '🥋'
+  },
+  {
+    id: 'shop-health-ring',
+    name: 'Health Ring',
+    type: 'accessory',
+    rarity: 'common',
+    level: 1,
+    stats: { maxHp: 30 },
+    description: 'A ring that boosts vitality.',
+    emoji: '💍'
+  },
+  {
+    id: 'shop-iron-sword',
+    name: 'Iron Sword',
+    type: 'weapon',
+    rarity: 'uncommon',
+    level: 5,
+    stats: { attack: 8, critChance: 0.05 },
+    description: 'A sturdy iron blade.',
+    emoji: '⚔️'
+  },
+  {
+    id: 'shop-chainmail',
+    name: 'Chainmail',
+    type: 'armor',
+    rarity: 'uncommon',
+    level: 5,
+    stats: { defense: 8, maxHp: 40 },
+    description: 'Interlocking rings of protection.',
+    emoji: '🛡️'
+  },
+  {
+    id: 'shop-mana-amulet',
+    name: 'Mana Amulet',
+    type: 'accessory',
+    rarity: 'uncommon',
+    level: 5,
+    stats: { maxMana: 30 },
+    description: 'Increases mana pool.',
+    emoji: '📿'
+  },
+  {
+    id: 'shop-steel-blade',
+    name: 'Steel Blade',
+    type: 'weapon',
+    rarity: 'rare',
+    level: 10,
+    stats: { attack: 15, critChance: 0.08, attackSpeed: 0.1 },
+    description: 'A finely crafted steel sword.',
+    emoji: '🗡️'
+  },
+  {
+    id: 'shop-plate-armor',
+    name: 'Plate Armor',
+    type: 'armor',
+    rarity: 'rare',
+    level: 10,
+    stats: { defense: 15, maxHp: 80 },
+    description: 'Heavy but protective.',
+    emoji: '🛡️'
   }
 ];
+
+export function getShopItemPrice(item: Equipment): number {
+  const rarityMultiplier = {
+    common: 1,
+    uncommon: 2.5,
+    rare: 6,
+    epic: 15,
+    legendary: 40
+  };
+  return Math.floor(item.level * 20 * rarityMultiplier[item.rarity]);
+}
 
 // ============ JS CONCEPTS ============
 

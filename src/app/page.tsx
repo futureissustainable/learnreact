@@ -10,12 +10,13 @@ import { ScriptsPanel } from '@/components/game/ScriptsPanel';
 import { ZoneSelector } from '@/components/game/ZoneSelector';
 import { InventoryPanel } from '@/components/game/InventoryPanel';
 import { ConceptsPanel } from '@/components/game/ConceptsPanel';
+import { ShopPanel } from '@/components/game/ShopPanel';
 import { GameHeader } from '@/components/game/GameHeader';
 import { Onboarding } from '@/components/game/Onboarding';
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<'combat' | 'inventory' | 'scripts' | 'concepts'>('combat');
+  const [activeTab, setActiveTab] = useState<'combat' | 'inventory' | 'shop' | 'scripts' | 'concepts'>('combat');
   const gameLoopRef = useRef<number | null>(null);
 
   const initialized = useGameStore(s => s.initialized);
@@ -93,6 +94,7 @@ export default function Home() {
         )}
 
         {activeTab === 'inventory' && <InventoryPanel />}
+        {activeTab === 'shop' && <ShopPanel />}
         {activeTab === 'scripts' && <ScriptsPanel fullWidth />}
         {activeTab === 'concepts' && <ConceptsPanel />}
       </main>
