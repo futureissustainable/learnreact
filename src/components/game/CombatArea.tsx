@@ -192,7 +192,7 @@ export function CombatArea() {
       {/* New Player Guide */}
       {killCount < 5 && (
         <div className="mt-5 pt-4 border-t border-[#313244] text-xs text-[#6c7086]">
-          <p><Lightning size={12} weight="fill" className="inline text-[#f9e2af]" /> Auto-attacking • Use abilities below • Enable scripts in Scripts tab</p>
+          <p><Lightning size={12} weight="fill" className="inline text-[#f9e2af]" /> Create a script to auto-attack! Go to <span className="text-[#cba6f7]">Scripts</span> tab → click <span className="text-[#cba6f7]">+ New</span></p>
         </div>
       )}
     </div>

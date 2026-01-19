@@ -100,6 +100,8 @@ interface GameStore extends GameState {
 
   // Scripts
   toggleScript: (scriptId: string) => void;
+  addScript: (script: Omit<AutoScript, 'id' | 'lastTriggered' | 'triggerCount'>) => void;
+  deleteScript: (scriptId: string) => void;
   evaluateScripts: () => void;
 
   // Progression
@@ -636,6 +638,37 @@ export const useGameStore = create<GameStore>()(
         }));
       },
 
+      addScript: (scriptData) => {
+        const newScript: AutoScript = {
+          ...scriptData,
+          id: `script-${Date.now()}`,
+          lastTriggered: 0,
+          triggerCount: 0
+        };
+
+        set(s => ({
+          hero: {
+            ...s.hero,
+            scripts: [...s.hero.scripts, newScript]
+          }
+        }));
+
+        get().addLogEntry({
+          type: 'script',
+          message: `Created script: ${newScript.name}`,
+          color: '#cba6f7'
+        });
+      },
+
+      deleteScript: (scriptId) => {
+        set(s => ({
+          hero: {
+            ...s.hero,
+            scripts: s.hero.scripts.filter(script => script.id !== scriptId)
+          }
+        }));
+      },
+
       evaluateScripts: () => {
         const state = get();
         const now = Date.now();
@@ -1136,10 +1169,10 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'codequest-rpg-storage',
-      version: 4,
+      version: 5,
       migrate: (persistedState: unknown, version: number) => {
         // Force fresh state for old versions - major gameplay change
-        if (version < 4) {
+        if (version < 5) {
           return getInitialState();
         }
         return persistedState as GameState;
