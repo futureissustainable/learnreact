@@ -1,21 +1,20 @@
 'use client';
 
 import { useGameStore } from '@/store/gameStore';
-import { CheckCircle, Lock, Lightning, BookOpen, Code, TrendUp, Sparkle } from '@phosphor-icons/react';
+import { CheckCircle, Lock, Lightning, BookOpen, Code, TrendUp, Sword, Target, Sparkle } from '@phosphor-icons/react';
 
 export function ConceptsPanel() {
   const concepts = useGameStore(s => s.concepts);
-  const hero = useGameStore(s => s.hero);
 
   const categories = [
-    { id: 'variables', name: 'Variables', color: 'from-blue-600 to-blue-400', icon: '📦' },
-    { id: 'conditionals', name: 'Conditionals', color: 'from-green-600 to-green-400', icon: '🔀' },
-    { id: 'loops', name: 'Loops', color: 'from-yellow-600 to-yellow-400', icon: '🔄' },
-    { id: 'functions', name: 'Functions', color: 'from-purple-600 to-purple-400', icon: '⚡' },
-    { id: 'arrays', name: 'Arrays', color: 'from-pink-600 to-pink-400', icon: '📚' },
-    { id: 'objects', name: 'Objects', color: 'from-orange-600 to-orange-400', icon: '🎯' },
-    { id: 'async', name: 'Async', color: 'from-cyan-600 to-cyan-400', icon: '⏳' },
-    { id: 'react', name: 'React', color: 'from-sky-600 to-sky-400', icon: '⚛️' }
+    { id: 'variables', name: 'Variables', color: '#89b4fa' },
+    { id: 'conditionals', name: 'Conditionals', color: '#a6e3a1' },
+    { id: 'loops', name: 'Loops', color: '#f9e2af' },
+    { id: 'functions', name: 'Functions', color: '#cba6f7' },
+    { id: 'arrays', name: 'Arrays', color: '#f38ba8' },
+    { id: 'objects', name: 'Objects', color: '#fab387' },
+    { id: 'async', name: 'Async', color: '#94e2d5' },
+    { id: 'react', name: 'React', color: '#89dceb' }
   ];
 
   const learnedCount = concepts.filter(c => c.learned).length;
@@ -29,50 +28,43 @@ export function ConceptsPanel() {
     }, {} as Record<string, number>);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Overview Header */}
-      <div className="bg-gradient-to-br from-[#22223B] to-[#4A4E69]/50 rounded-xl p-6 border border-purple-500/20">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
-            <Code size={28} weight="bold" className="text-white" />
+      <div className="bg-[#1e1e2e] rounded-xl p-5 border border-[#313244]">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 rounded-xl bg-[#cba6f7]/20 flex items-center justify-center">
+            <Code size={24} className="text-[#cba6f7]" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white">JavaScript Journey</h2>
-            <p className="text-[#9A8C98]">Master concepts to unlock powers and become stronger</p>
+            <h2 className="text-lg font-semibold text-[#cdd6f4]">JavaScript Journey</h2>
+            <p className="text-sm text-[#6c7086]">Learn concepts to unlock powers</p>
           </div>
         </div>
 
         {/* Progress Bar */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-[#9A8C98]">Overall Progress</span>
-            <span className="text-lg font-bold text-white">{learnedCount}/{concepts.length} Concepts</span>
+            <span className="text-xs text-[#6c7086]">Progress</span>
+            <span className="text-sm font-medium text-[#cdd6f4]">{learnedCount}/{concepts.length}</span>
           </div>
-          <div className="h-4 bg-black/30 rounded-full overflow-hidden">
+          <div className="h-2 bg-[#313244] rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 transition-all duration-500 relative"
+              className="h-full bg-[#cba6f7] transition-all"
               style={{ width: `${(learnedCount / concepts.length) * 100}%` }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent" />
-              {learnedCount > 0 && (
-                <div className="absolute right-1 top-1/2 -translate-y-1/2">
-                  <Sparkle size={12} weight="fill" className="text-white animate-pulse" />
-                </div>
-              )}
-            </div>
+            />
           </div>
         </div>
 
-        {/* Stat Bonuses from Learning */}
+        {/* Stat Bonuses */}
         {Object.keys(totalStatBonus).length > 0 && (
-          <div className="bg-black/20 rounded-lg p-3">
+          <div className="bg-[#181825] rounded-lg p-3 border border-[#313244]">
             <div className="flex items-center gap-2 mb-2">
-              <TrendUp size={16} className="text-green-400" />
-              <span className="text-xs text-green-400 font-medium">BONUSES FROM LEARNING</span>
+              <TrendUp size={14} className="text-[#a6e3a1]" />
+              <span className="text-xs text-[#a6e3a1] font-medium">BONUSES</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {Object.entries(totalStatBonus).map(([stat, value]) => (
-                <span key={stat} className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded">
+                <span key={stat} className="text-xs px-2 py-1 bg-[#a6e3a1]/10 text-[#a6e3a1] rounded">
                   +{typeof value === 'number' && value < 1 ? `${(value * 100).toFixed(0)}%` : value} {stat}
                 </span>
               ))}
@@ -94,56 +86,61 @@ export function ConceptsPanel() {
         const category = categories.find(cat => cat.id === activeConcept.category);
 
         return (
-          <div className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 rounded-xl p-5 border border-purple-500/30">
+          <div className="bg-[#1e1e2e] rounded-xl p-5 border border-[#cba6f7]/30">
             <div className="flex items-center gap-2 mb-3">
-              <Lightning size={20} weight="fill" className="text-purple-400" />
-              <span className="text-sm font-bold text-purple-400">NOW LEARNING</span>
+              <Lightning size={16} weight="fill" className="text-[#cba6f7]" />
+              <span className="text-xs font-semibold text-[#cba6f7]">NOW LEARNING</span>
             </div>
 
-            <div className="flex items-start gap-4">
-              <div className="text-4xl">{category?.icon}</div>
+            <div className="flex items-start gap-3">
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: `${category?.color}20` }}
+              >
+                <Code size={20} style={{ color: category?.color }} />
+              </div>
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-white">{activeConcept.name}</h3>
-                <p className="text-sm text-[#C9ADA7] mt-1">{activeConcept.description}</p>
+                <h3 className="font-semibold text-[#cdd6f4]">{activeConcept.name}</h3>
+                <p className="text-sm text-[#6c7086] mt-1">{activeConcept.description}</p>
 
                 {/* Progress */}
-                <div className="mt-4">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-[#9A8C98]">XP Progress</span>
-                    <span className="text-white font-medium">{activeConcept.currentXp} / {activeConcept.xpToLearn}</span>
+                <div className="mt-3">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-[#6c7086]">XP</span>
+                    <span className="text-[#cdd6f4]">{activeConcept.currentXp}/{activeConcept.xpToLearn}</span>
                   </div>
-                  <div className="h-3 bg-black/30 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-[#313244] rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                      className="h-full bg-[#cba6f7] transition-all"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
                 </div>
 
                 {/* Tasks */}
-                <div className="mt-4 space-y-2">
+                <div className="mt-3 space-y-1">
                   {activeConcept.learnByDoing.map(task => (
                     <div
                       key={task.id}
-                      className={`flex items-center gap-2 text-sm ${task.completed ? 'text-green-400' : 'text-[#9A8C98]'}`}
+                      className={`flex items-center gap-2 text-xs ${task.completed ? 'text-[#a6e3a1]' : 'text-[#6c7086]'}`}
                     >
                       {task.completed ? (
-                        <CheckCircle size={16} weight="fill" className="text-green-400" />
+                        <CheckCircle size={14} weight="fill" />
                       ) : (
-                        <div className="w-4 h-4 rounded-full border-2 border-current" />
+                        <div className="w-3.5 h-3.5 rounded-full border border-current" />
                       )}
                       <span className="flex-1">{task.description}</span>
-                      <span className="font-mono text-xs">{task.current}/{task.target}</span>
+                      <span className="font-mono">{task.current}/{task.target}</span>
                     </div>
                   ))}
                 </div>
 
-                {/* Rewards Preview */}
+                {/* Rewards */}
                 {activeConcept.unlocksAbilities.length > 0 && (
-                  <div className="mt-4 p-3 bg-amber-500/10 rounded-lg border border-amber-500/30">
-                    <span className="text-xs text-amber-400 font-medium">🎁 REWARD: </span>
-                    <span className="text-amber-400">
-                      Unlock <span className="font-bold">{activeConcept.unlocksAbilities.join(', ')}</span> ability!
+                  <div className="mt-3 p-2 bg-[#f9e2af]/10 rounded-lg border border-[#f9e2af]/20">
+                    <span className="text-xs text-[#f9e2af]">
+                      <Sparkle size={12} className="inline mr-1" weight="fill" />
+                      Unlock: <span className="font-medium">{activeConcept.unlocksAbilities.join(', ')}</span>
                     </span>
                   </div>
                 )}
@@ -162,15 +159,18 @@ export function ConceptsPanel() {
           const learnedInCategory = categoryConcepts.filter(c => c.learned).length;
 
           return (
-            <div key={category.id} className="bg-[#22223B] rounded-xl p-4 border border-white/5">
-              <div className="flex items-center justify-between mb-4">
+            <div key={category.id} className="bg-[#1e1e2e] rounded-xl p-4 border border-[#313244]">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">{category.icon}</span>
-                  <h3 className={`font-bold text-transparent bg-clip-text bg-gradient-to-r ${category.color}`}>
-                    {category.name}
-                  </h3>
+                  <div
+                    className="w-6 h-6 rounded flex items-center justify-center"
+                    style={{ backgroundColor: `${category.color}20` }}
+                  >
+                    <Code size={14} style={{ color: category.color }} />
+                  </div>
+                  <h3 className="font-medium text-[#cdd6f4]">{category.name}</h3>
                 </div>
-                <span className="text-xs text-[#9A8C98]">{learnedInCategory}/{categoryConcepts.length}</span>
+                <span className="text-xs text-[#6c7086]">{learnedInCategory}/{categoryConcepts.length}</span>
               </div>
 
               <div className="space-y-2">
@@ -184,61 +184,49 @@ export function ConceptsPanel() {
                   return (
                     <div
                       key={concept.id}
-                      className={`rounded-lg p-3 transition-all ${
+                      className={`rounded-lg p-2.5 transition-all border ${
                         concept.learned
-                          ? 'bg-green-900/20 border border-green-500/30'
+                          ? 'bg-[#a6e3a1]/10 border-[#a6e3a1]/30'
                           : canLearn
-                            ? 'bg-purple-900/20 border border-purple-500/30'
-                            : 'bg-[#4A4E69]/20 border border-[#4A4E69]/30 opacity-50'
+                            ? 'bg-[#cba6f7]/10 border-[#cba6f7]/30'
+                            : 'bg-[#181825] border-[#313244] opacity-50'
                       }`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <div className={`
-                          w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
+                          w-6 h-6 rounded flex items-center justify-center flex-shrink-0
                           ${concept.learned
-                            ? 'bg-green-600'
+                            ? 'bg-[#a6e3a1]/20'
                             : canLearn
-                              ? 'bg-purple-600'
-                              : 'bg-[#4A4E69]'
+                              ? 'bg-[#cba6f7]/20'
+                              : 'bg-[#313244]'
                           }
                         `}>
                           {concept.learned ? (
-                            <CheckCircle size={18} weight="fill" className="text-white" />
+                            <CheckCircle size={14} weight="fill" className="text-[#a6e3a1]" />
                           ) : canLearn ? (
-                            <Lightning size={18} className="text-white" />
+                            <Lightning size={14} className="text-[#cba6f7]" />
                           ) : (
-                            <Lock size={18} className="text-white/50" />
+                            <Lock size={14} className="text-[#6c7086]" />
                           )}
                         </div>
 
-                        <div className="flex-1 min-w-0">
-                          <h4 className={`font-medium truncate ${concept.learned ? 'text-green-400' : 'text-white'}`}>
-                            {concept.name}
-                          </h4>
+                        <span className={`text-sm flex-1 ${concept.learned ? 'text-[#a6e3a1]' : 'text-[#cdd6f4]'}`}>
+                          {concept.name}
+                        </span>
 
-                          {/* Mini progress for active learning */}
-                          {canLearn && progress > 0 && (
-                            <div className="mt-1 h-1 bg-black/30 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-purple-500"
-                                style={{ width: `${progress}%` }}
-                              />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Status badge */}
                         {concept.learned && (
-                          <span className="text-[10px] px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full">
-                            MASTERED
-                          </span>
-                        )}
-                        {canLearn && (
-                          <span className="text-[10px] px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full">
-                            LEARNING
+                          <span className="text-[10px] px-1.5 py-0.5 bg-[#a6e3a1]/20 text-[#a6e3a1] rounded">
+                            Done
                           </span>
                         )}
                       </div>
+
+                      {canLearn && progress > 0 && (
+                        <div className="mt-2 h-1 bg-[#313244] rounded-full overflow-hidden">
+                          <div className="h-full bg-[#cba6f7]" style={{ width: `${progress}%` }} />
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -249,36 +237,32 @@ export function ConceptsPanel() {
       </div>
 
       {/* How Learning Works */}
-      <div className="bg-[#22223B] rounded-xl p-5 border border-white/5">
+      <div className="bg-[#1e1e2e] rounded-xl p-4 border border-[#313244]">
         <div className="flex items-center gap-2 mb-4">
-          <BookOpen size={20} className="text-cyan-400" />
-          <h3 className="font-bold text-white">How Learning Works</h3>
+          <BookOpen size={16} className="text-[#89b4fa]" />
+          <h3 className="font-medium text-[#cdd6f4]">How It Works</h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-[#4A4E69]/20 rounded-lg">
-            <div className="text-3xl mb-2">⚔️</div>
-            <h4 className="font-medium text-white mb-1">Battle</h4>
-            <p className="text-xs text-[#9A8C98]">Kill monsters to earn concept XP</p>
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="text-center p-3 bg-[#181825] rounded-lg border border-[#313244]">
+            <Sword size={20} className="mx-auto text-[#f38ba8] mb-2" />
+            <p className="text-xs text-[#6c7086]">Battle to earn XP</p>
           </div>
-          <div className="text-center p-4 bg-[#4A4E69]/20 rounded-lg">
-            <div className="text-3xl mb-2">📝</div>
-            <h4 className="font-medium text-white mb-1">Complete Tasks</h4>
-            <p className="text-xs text-[#9A8C98]">Each concept has learning objectives</p>
+          <div className="text-center p-3 bg-[#181825] rounded-lg border border-[#313244]">
+            <Target size={20} className="mx-auto text-[#f9e2af] mb-2" />
+            <p className="text-xs text-[#6c7086]">Complete tasks</p>
           </div>
-          <div className="text-center p-4 bg-[#4A4E69]/20 rounded-lg">
-            <div className="text-3xl mb-2">⚡</div>
-            <h4 className="font-medium text-white mb-1">Unlock Powers</h4>
-            <p className="text-xs text-[#9A8C98]">Mastered concepts grant abilities</p>
+          <div className="text-center p-3 bg-[#181825] rounded-lg border border-[#313244]">
+            <Lightning size={20} className="mx-auto text-[#cba6f7] mb-2" />
+            <p className="text-xs text-[#6c7086]">Unlock abilities</p>
           </div>
         </div>
 
-        <div className="mt-4 bg-[#1a1a2e] rounded-lg p-4 font-mono text-sm">
-          <p className="text-[#9A8C98]">// Your automation scripts teach real JS patterns!</p>
-          <p className="text-green-400 mt-2">if (hero.hp &lt; hero.maxHp * 0.5) {'{'}</p>
-          <p className="text-cyan-400 pl-4">useAbility(&apos;heal&apos;);</p>
-          <p className="text-green-400">{'}'}</p>
-          <p className="text-[#9A8C98] mt-2">// ↑ This teaches conditionals!</p>
+        <div className="bg-[#11111b] rounded-lg p-3 font-mono text-xs border border-[#313244]">
+          <p className="text-[#6c7086]">// Scripts teach real JS</p>
+          <p className="text-[#a6e3a1] mt-1">if (hero.hp &lt; 50) {'{'}</p>
+          <p className="text-[#89b4fa] pl-3">useAbility('heal');</p>
+          <p className="text-[#a6e3a1]">{'}'}</p>
         </div>
       </div>
     </div>

@@ -640,7 +640,7 @@ export const DEFAULT_SCRIPTS: AutoScript[] = [
     id: 'auto-heal',
     name: 'Auto Heal',
     code: `if (player.hp < player.maxHp * 0.5) {\n  useAbility('heal');\n}`,
-    enabled: true,
+    enabled: false,  // Disabled by default - let player enable
     priority: 10,
     condition: { type: 'hp_below', percent: 50 },
     action: { type: 'use_ability', abilityId: 'heal' },
@@ -653,11 +653,11 @@ export const DEFAULT_SCRIPTS: AutoScript[] = [
     id: 'power-strike-ready',
     name: 'Power Strike on Cooldown',
     code: `if (abilities.powerStrike.ready) {\n  useAbility('power-strike');\n}`,
-    enabled: true,
+    enabled: false,  // Disabled by default - let player enable
     priority: 5,
     condition: { type: 'ability_ready', abilityId: 'power-strike' },
     action: { type: 'use_ability', abilityId: 'power-strike' },
-    cooldown: 0,
+    cooldown: 3,  // 3 second cooldown to prevent spam
     lastTriggered: 0,
     triggerCount: 0,
     conceptsUsed: ['conditionals']

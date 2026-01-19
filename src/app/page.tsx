@@ -12,8 +12,6 @@ import { InventoryPanel } from '@/components/game/InventoryPanel';
 import { ConceptsPanel } from '@/components/game/ConceptsPanel';
 import { GameHeader } from '@/components/game/GameHeader';
 import { Onboarding } from '@/components/game/Onboarding';
-import { NextGoal } from '@/components/game/NextGoal';
-import { Notifications } from '@/components/game/Notifications';
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
@@ -26,23 +24,19 @@ export default function Home() {
   const gameTick = useGameStore(s => s.gameTick);
   const startAutoBattle = useGameStore(s => s.startAutoBattle);
 
-  // Handle hydration
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Game loop
   useEffect(() => {
     if (!mounted || !initialized) return;
 
     let lastTime = performance.now();
 
     const loop = (currentTime: number) => {
-      const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
+      const deltaTime = (currentTime - lastTime) / 1000;
       lastTime = currentTime;
-
       gameTick(deltaTime);
-
       gameLoopRef.current = requestAnimationFrame(loop);
     };
 
@@ -57,54 +51,41 @@ export default function Home() {
     };
   }, [mounted, initialized, isAutoBattling, gameTick]);
 
-  // Handle onboarding completion
   const handleOnboardingComplete = (heroName: string) => {
     initializeGame(heroName);
     startAutoBattle();
   };
 
-  // Loading state
   if (!mounted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#22223B]">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-[#F2E9E4] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[#C9ADA7]">Loading CodeQuest...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-[#11111b]">
+        <div className="w-8 h-8 border-2 border-[#313244] border-t-[#cdd6f4] rounded-full animate-spin" />
       </div>
     );
   }
 
-  // Onboarding for new players
   if (!initialized) {
     return <Onboarding onComplete={handleOnboardingComplete} />;
   }
 
   return (
-    <div className="min-h-screen bg-[#1a1a2e] text-white">
-      {/* Notifications overlay */}
-      <Notifications />
-
+    <div className="min-h-screen bg-[#11111b]">
       <GameHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
       <main className="container-page py-4">
         {activeTab === 'combat' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            {/* Left Panel - Hero & Zone */}
             <div className="lg:col-span-3 space-y-4">
               <HeroPanel />
-              <NextGoal />
               <ZoneSelector />
             </div>
 
-            {/* Center - Combat */}
             <div className="lg:col-span-6 space-y-4">
               <CombatArea />
               <AbilitiesBar />
               <CombatLog />
             </div>
 
-            {/* Right Panel - Scripts */}
             <div className="lg:col-span-3">
               <ScriptsPanel />
             </div>

@@ -299,15 +299,15 @@ export const useGameStore = create<GameStore>()(
           }));
         }
 
-        // Log
-        get().addLogEntry({
-          type: isCrit ? 'player_crit' : 'player_attack',
-          message: isCrit
-            ? `CRIT! You dealt ${damage} damage to ${target.name}!`
-            : `You dealt ${damage} damage to ${target.name}`,
-          value: damage,
-          color: isCrit ? '#F59E0B' : '#22C55E'
-        });
+        // Log - only crits and kills to reduce spam
+        if (isCrit) {
+          get().addLogEntry({
+            type: 'player_crit',
+            message: `💥 CRIT! ${damage} damage to ${target.name}!`,
+            value: damage,
+            color: '#F59E0B'
+          });
+        }
 
         // Update stats
         set(s => ({
@@ -337,12 +337,19 @@ export const useGameStore = create<GameStore>()(
 
         const newHp = state.hero.stats.hp - damage;
 
-        get().addLogEntry({
-          type: 'enemy_attack',
-          message: `${mob.name} dealt ${damage} damage to you`,
-          value: damage,
-          color: '#EF4444'
-        });
+        // Only log significant damage (>15% of max HP) or if health is low
+        const damagePercent = damage / state.hero.stats.maxHp;
+        const healthLow = newHp / state.hero.stats.maxHp < 0.3;
+        if (damagePercent > 0.15 || healthLow) {
+          get().addLogEntry({
+            type: 'enemy_attack',
+            message: healthLow
+              ? `⚠️ ${mob.name} hit you for ${damage}! HP LOW!`
+              : `${mob.name} hit you for ${damage}`,
+            value: damage,
+            color: healthLow ? '#DC2626' : '#EF4444'
+          });
+        }
 
         if (newHp <= 0) {
           // Player died
@@ -683,11 +690,15 @@ export const useGameStore = create<GameStore>()(
               }
             }));
 
-            get().addLogEntry({
-              type: 'script',
-              message: `[Script] ${script.name} triggered`,
-              color: '#6366F1'
-            });
+            // Only log script triggers occasionally (every 5th trigger)
+            const newTriggerCount = script.triggerCount + 1;
+            if (newTriggerCount <= 3 || newTriggerCount % 10 === 0) {
+              get().addLogEntry({
+                type: 'script',
+                message: `⚡ Script: ${script.name}`,
+                color: '#6366F1'
+              });
+            }
 
             get().updateLearnTasks('trigger_script');
 
