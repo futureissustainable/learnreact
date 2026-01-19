@@ -112,11 +112,12 @@ interface GameStore extends GameState {
   unlockZone: (zoneId: string) => void;
   summonBoss: () => void;
 
-  // Equipment
+  // Equipment & Shop
   equipItem: (itemId: string) => void;
   unequipSlot: (slot: 'weapon' | 'armor' | 'accessory') => void;
   addToInventory: (equipment: Equipment) => void;
   sellItem: (itemId: string) => void;
+  buyItem: (item: Equipment, price: number) => boolean;
   recalculateStats: () => void;
 
   // Concepts
@@ -215,12 +216,10 @@ export const useGameStore = create<GameStore>()(
         // Recalculate stats with buffs
         get().recalculateStats();
 
-        // Player attacks based on attack speed
-        const hero = get().hero;
-        const attackInterval = 1 / hero.stats.attackSpeed;
-        if (Math.random() < adjustedDelta / attackInterval) {
-          get().playerAttack();
-        }
+        // NO passive auto-attack! Player must use abilities or scripts
+        // Damage only comes from:
+        // 1. Manually clicking abilities
+        // 2. Scripts the player has written/enabled
 
         // Update mob cooldowns and process attacks
         const currentMobs = get().currentMobs;
@@ -247,7 +246,7 @@ export const useGameStore = create<GameStore>()(
           }
         });
 
-        // Evaluate automation scripts
+        // Evaluate automation scripts (only ones player has enabled)
         get().evaluateScripts();
       },
 
@@ -950,6 +949,45 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
+      buyItem: (item, price) => {
+        const state = get();
+        if (state.hero.gold < price) {
+          get().addLogEntry({
+            type: 'gold',
+            message: `Not enough gold! Need ${price}`,
+            color: '#EF4444'
+          });
+          return false;
+        }
+
+        if (state.inventory.length >= state.maxInventorySize) {
+          get().addLogEntry({
+            type: 'loot',
+            message: 'Inventory full!',
+            color: '#EF4444'
+          });
+          return false;
+        }
+
+        // Deduct gold and add item with unique ID
+        const newItem = { ...item, id: `${item.id}-${Date.now()}` };
+        set(s => ({
+          hero: {
+            ...s.hero,
+            gold: s.hero.gold - price
+          },
+          inventory: [...s.inventory, newItem]
+        }));
+
+        get().addLogEntry({
+          type: 'loot',
+          message: `Bought ${item.name} for ${price} gold`,
+          color: '#22C55E'
+        });
+
+        return true;
+      },
+
       recalculateStats: () => {
         set(s => {
           const hero = { ...s.hero };
@@ -1098,10 +1136,10 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'codequest-rpg-storage',
-      version: 3,
+      version: 4,
       migrate: (persistedState: unknown, version: number) => {
-        // Force fresh state for old versions
-        if (version < 3) {
+        // Force fresh state for old versions - major gameplay change
+        if (version < 4) {
           return getInitialState();
         }
         return persistedState as GameState;
