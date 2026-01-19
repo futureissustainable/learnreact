@@ -2,24 +2,24 @@
 
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { Lightning, Lock } from '@phosphor-icons/react';
+import { Lightning, Lock, Drop } from '@phosphor-icons/react';
 
 export function AbilitiesBar() {
   const hero = useGameStore(s => s.hero);
   const useAbility = useGameStore(s => s.useAbility);
-  const [hoveredAbility, setHoveredAbility] = useState<string | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const unlockedAbilities = hero.abilities.filter(a => a.unlocked);
   const lockedAbilities = hero.abilities.filter(a => !a.unlocked);
 
   return (
-    <div className="bg-[#22223B] rounded-xl p-4">
+    <div className="bg-[#1e1e2e] rounded-xl p-4 border border-[#313244]">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-bold text-white flex items-center gap-2">
-          <Lightning size={18} weight="fill" className="text-yellow-400" />
+        <h3 className="font-semibold text-[#cdd6f4] flex items-center gap-2">
+          <Lightning size={16} className="text-[#f9e2af]" />
           Abilities
         </h3>
-        <span className="text-xs text-[#9A8C98]">{unlockedAbilities.length}/{hero.abilities.length} unlocked</span>
+        <span className="text-xs text-[#6c7086]">{unlockedAbilities.length}/{hero.abilities.length}</span>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -28,127 +28,82 @@ export function AbilitiesBar() {
           const noMana = hero.stats.mana < ability.manaCost;
           const disabled = onCooldown || noMana;
           const cooldownPercent = onCooldown ? (ability.currentCooldown / ability.cooldown) * 100 : 0;
-          const isHovered = hoveredAbility === ability.id;
 
           return (
-            <div key={ability.id} className="relative group">
+            <div key={ability.id} className="relative">
               <button
                 onClick={() => useAbility(ability.id)}
                 disabled={disabled}
-                onMouseEnter={() => setHoveredAbility(ability.id)}
-                onMouseLeave={() => setHoveredAbility(null)}
+                onMouseEnter={() => setHoveredId(ability.id)}
+                onMouseLeave={() => setHoveredId(null)}
                 className={`
-                  relative w-16 h-16 rounded-xl flex flex-col items-center justify-center
-                  transition-all overflow-hidden border-2
+                  relative w-14 h-14 rounded-lg flex flex-col items-center justify-center
+                  border transition-all overflow-hidden
                   ${disabled
-                    ? 'bg-[#4A4E69]/30 border-[#4A4E69]/50 cursor-not-allowed'
-                    : 'bg-gradient-to-br from-[#4A4E69] to-[#3A3E59] border-purple-500/30 hover:border-purple-400 cursor-pointer hover:scale-110 hover:shadow-lg hover:shadow-purple-500/20'
+                    ? 'bg-[#181825] border-[#313244] opacity-60'
+                    : 'bg-[#181825] border-[#45475a] hover:border-[#89b4fa] cursor-pointer'
                   }
                 `}
               >
-                {/* Cooldown Overlay - sweep from top */}
+                {/* Cooldown overlay */}
                 {onCooldown && (
                   <div
-                    className="absolute inset-0 bg-black/70 transition-all"
-                    style={{
-                      clipPath: `polygon(0 0, 100% 0, 100% ${cooldownPercent}%, 0 ${cooldownPercent}%)`
-                    }}
+                    className="absolute inset-0 bg-[#11111b]/80"
+                    style={{ height: `${cooldownPercent}%` }}
                   />
                 )}
 
-                {/* Ability Icon */}
-                <span className={`text-2xl relative z-10 transition-transform ${!disabled ? 'group-hover:scale-110' : 'opacity-50'}`}>
-                  {ability.emoji}
-                </span>
+                <Lightning size={20} weight="fill" className="text-[#f9e2af] relative z-10" />
 
-                {/* Cooldown Timer */}
                 {onCooldown && (
-                  <span className="absolute bottom-1 text-xs font-bold text-white/80 z-10">
+                  <span className="text-[10px] text-[#cdd6f4] relative z-10">
                     {ability.currentCooldown.toFixed(1)}s
                   </span>
-                )}
-
-                {/* No Mana Indicator */}
-                {!onCooldown && noMana && (
-                  <span className="absolute bottom-0.5 text-[8px] text-red-400 z-10">No Mana</span>
-                )}
-
-                {/* Ready glow effect */}
-                {!disabled && (
-                  <div className="absolute inset-0 bg-gradient-to-t from-purple-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 )}
               </button>
 
               {/* Tooltip */}
-              {isHovered && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-[#1a1a2e] rounded-lg border border-purple-500/30 shadow-xl z-50 pointer-events-none">
-                  <div className="text-sm font-bold text-white">{ability.name}</div>
-                  <div className="text-xs text-[#9A8C98] mt-1">{ability.description}</div>
-                  <div className="flex items-center gap-3 mt-2 pt-2 border-t border-white/10">
-                    <span className="text-xs text-blue-400">💧 {ability.manaCost}</span>
-                    <span className="text-xs text-[#9A8C98]">⏱️ {ability.cooldown}s</span>
+              {hoveredId === ability.id && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 p-2 bg-[#11111b] rounded-lg border border-[#313244] shadow-lg z-50">
+                  <div className="text-sm font-medium text-[#cdd6f4]">{ability.name}</div>
+                  <div className="text-xs text-[#6c7086] mt-1">{ability.description}</div>
+                  <div className="flex items-center gap-2 mt-2 text-xs text-[#6c7086]">
+                    <span className="text-[#89b4fa]">{ability.manaCost} mana</span>
+                    <span>{ability.cooldown}s cd</span>
                   </div>
-                  {ability.requiredConcept && (
-                    <div className="text-[10px] text-purple-400 mt-1">
-                      ✨ From: {ability.requiredConcept}
-                    </div>
-                  )}
-                  {/* Arrow */}
-                  <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#1a1a2e] rotate-45 border-r border-b border-purple-500/30" />
                 </div>
               )}
             </div>
           );
         })}
 
-        {/* Locked Abilities Preview */}
-        {lockedAbilities.slice(0, 3).map(ability => (
+        {/* Locked abilities */}
+        {lockedAbilities.slice(0, 2).map(ability => (
           <div
             key={ability.id}
-            className="relative w-16 h-16 rounded-xl bg-[#4A4E69]/20 border-2 border-dashed border-[#4A4E69]/40 flex flex-col items-center justify-center cursor-not-allowed"
-            title={`${ability.name} - Requires: ${ability.requiredConcept}`}
+            className="w-14 h-14 rounded-lg bg-[#181825] border border-dashed border-[#313244] flex items-center justify-center opacity-40"
+            title={`Requires: ${ability.requiredConcept}`}
           >
-            <span className="text-2xl opacity-30">{ability.emoji}</span>
-            <Lock size={12} className="absolute bottom-1 text-[#9A8C98]/50" />
+            <Lock size={16} className="text-[#6c7086]" />
           </div>
         ))}
-
-        {hero.abilities.length === 0 && (
-          <p className="text-[#9A8C98] text-sm">No abilities available</p>
-        )}
       </div>
 
-      {/* Mana Bar */}
-      <div className="mt-4 p-3 bg-[#4A4E69]/20 rounded-lg">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs text-blue-400 flex items-center gap-1">
-            💧 Mana
+      {/* Mana bar */}
+      <div className="mt-4 pt-3 border-t border-[#313244]">
+        <div className="flex items-center justify-between text-xs mb-1">
+          <span className="text-[#6c7086] flex items-center gap-1">
+            <Drop size={12} className="text-[#89b4fa]" /> Mana
           </span>
-          <span className="text-xs text-white font-medium">
-            {Math.floor(hero.stats.mana)} / {hero.stats.maxMana}
-          </span>
+          <span className="text-[#a6adc8]">{Math.floor(hero.stats.mana)}/{hero.stats.maxMana}</span>
         </div>
-        <div className="h-2.5 bg-black/30 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-[#313244] rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 transition-all duration-200 relative"
+            className="h-full bg-[#89b4fa] transition-all"
             style={{ width: `${(hero.stats.mana / hero.stats.maxMana) * 100}%` }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent" />
-          </div>
-        </div>
-        <div className="text-right mt-1">
-          <span className="text-[10px] text-[#9A8C98]">+{hero.stats.mana >= hero.stats.maxMana ? '0' : '5'}/sec regen</span>
+          />
         </div>
       </div>
-
-      {/* Quick Tips */}
-      {unlockedAbilities.length < 3 && (
-        <div className="mt-3 text-center">
-          <span className="text-[10px] text-[#9A8C98]">
-            💡 Learn JS concepts to unlock more abilities!
-          </span>
-        </div>
-      )}
     </div>
   );
 }

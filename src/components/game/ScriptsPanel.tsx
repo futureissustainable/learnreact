@@ -1,7 +1,7 @@
 'use client';
 
 import { useGameStore } from '@/store/gameStore';
-import { ToggleLeft, ToggleRight, Code } from '@phosphor-icons/react';
+import { ToggleLeft, ToggleRight, Code, Lightning } from '@phosphor-icons/react';
 
 interface ScriptsPanelProps {
   fullWidth?: boolean;
@@ -12,15 +12,14 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
   const toggleScript = useGameStore(s => s.toggleScript);
 
   return (
-    <div className={`bg-[#22223B] rounded-xl p-4 ${fullWidth ? '' : ''}`}>
-      <div className="flex items-center gap-2 mb-4">
-        <Code size={20} className="text-[#A855F7]" />
-        <h3 className="font-bold text-white">Automation Scripts</h3>
+    <div className={`bg-[#1e1e2e] rounded-xl p-4 border border-[#313244] ${fullWidth ? '' : ''}`}>
+      <div className="flex items-center gap-2 mb-3">
+        <Code size={16} className="text-[#cba6f7]" />
+        <h3 className="font-semibold text-[#cdd6f4]">Scripts</h3>
       </div>
 
-      <p className="text-xs text-[#9A8C98] mb-4">
-        Scripts run automatically when conditions are met.
-        Learn JS concepts to unlock more powerful scripts.
+      <p className="text-xs text-[#6c7086] mb-4">
+        Toggle scripts to automate combat actions.
       </p>
 
       <div className="space-y-3">
@@ -28,14 +27,16 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
           <div
             key={script.id}
             className={`
-              rounded-lg p-3 transition-colors
-              ${script.enabled ? 'bg-[#4A4E69]/50' : 'bg-[#4A4E69]/20'}
+              rounded-lg p-3 transition-colors border
+              ${script.enabled
+                ? 'bg-[#181825] border-[#cba6f7]/30'
+                : 'bg-[#181825] border-[#313244]'}
             `}
           >
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="flex-1">
-                <h4 className="font-medium text-white text-sm">{script.name}</h4>
-                <span className="text-xs text-[#9A8C98]">
+                <h4 className="font-medium text-[#cdd6f4] text-sm">{script.name}</h4>
+                <span className="text-xs text-[#6c7086]">
                   Triggered {script.triggerCount}x
                 </span>
               </div>
@@ -45,15 +46,15 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
                 className="flex-shrink-0"
               >
                 {script.enabled ? (
-                  <ToggleRight size={28} weight="fill" className="text-green-400" />
+                  <ToggleRight size={28} weight="fill" className="text-[#a6e3a1]" />
                 ) : (
-                  <ToggleLeft size={28} className="text-[#9A8C98]" />
+                  <ToggleLeft size={28} className="text-[#6c7086]" />
                 )}
               </button>
             </div>
 
             {/* Code Preview */}
-            <pre className="text-xs bg-[#1a1a2e] rounded p-2 overflow-x-auto font-mono text-green-400">
+            <pre className="text-xs bg-[#11111b] rounded p-2 overflow-x-auto font-mono text-[#a6e3a1] border border-[#313244]">
               {script.code}
             </pre>
 
@@ -63,7 +64,7 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
                 {script.conceptsUsed.map(concept => (
                   <span
                     key={concept}
-                    className="text-[10px] px-1.5 py-0.5 bg-[#A855F7]/20 text-[#A855F7] rounded"
+                    className="text-[10px] px-1.5 py-0.5 bg-[#cba6f7]/20 text-[#cba6f7] rounded"
                   >
                     {concept}
                   </span>
@@ -74,17 +75,17 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
         ))}
 
         {hero.scripts.length === 0 && (
-          <p className="text-[#9A8C98] text-center py-4">
-            No scripts yet. Learn concepts to unlock scripts.
+          <p className="text-[#6c7086] text-center py-4 text-sm">
+            No scripts yet. Learn concepts to unlock.
           </p>
         )}
       </div>
 
-      {/* Info */}
-      <div className="mt-4 p-3 bg-[#4A4E69]/20 rounded-lg">
-        <p className="text-xs text-[#9A8C98]">
-          <strong className="text-[#A855F7]">Tip:</strong> Learning JavaScript concepts unlocks new
-          script conditions and actions. The more you learn, the more you can automate!
+      {/* Tip */}
+      <div className="mt-4 p-3 bg-[#181825] rounded-lg border border-[#313244]">
+        <p className="text-xs text-[#6c7086]">
+          <Lightning size={12} className="inline text-[#cba6f7] mr-1" />
+          Learning JS concepts unlocks new scripts.
         </p>
       </div>
     </div>

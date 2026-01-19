@@ -2,23 +2,7 @@
 
 import { useGameStore } from '@/store/gameStore';
 import { useRef, useEffect } from 'react';
-import { Scroll, Trash } from '@phosphor-icons/react';
-
-const TYPE_ICONS: Record<string, string> = {
-  player_attack: '⚔️',
-  player_crit: '💥',
-  enemy_attack: '🔴',
-  ability: '✨',
-  heal: '💚',
-  loot: '🎁',
-  gold: '💰',
-  xp: '⭐',
-  level_up: '🎉',
-  script: '⚡',
-  death: '💀',
-  buff: '🛡️',
-  zone: '🗺️'
-};
+import { List, Trash } from '@phosphor-icons/react';
 
 export function CombatLog() {
   const combatLog = useGameStore(s => s.combatLog);
@@ -26,63 +10,50 @@ export function CombatLog() {
   const killCount = useGameStore(s => s.killCount);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom (newest)
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [combatLog]);
 
-  // Show recent entries (last 50)
-  const recentLogs = combatLog.slice(-50);
+  const recentLogs = combatLog.slice(-30);
 
   return (
-    <div className="bg-[#22223B] rounded-xl p-4">
+    <div className="bg-[#1e1e2e] rounded-xl p-4 border border-[#313244]">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-bold text-white flex items-center gap-2">
-          <Scroll size={18} className="text-[#9A8C98]" />
-          Combat Log
+        <h3 className="font-semibold text-[#cdd6f4] flex items-center gap-2">
+          <List size={16} className="text-[#6c7086]" />
+          Log
         </h3>
         <button
           onClick={clearLog}
-          className="text-xs text-[#9A8C98] hover:text-white transition-colors flex items-center gap-1"
+          className="text-[#6c7086] hover:text-[#cdd6f4] transition-colors"
         >
-          <Trash size={12} />
-          Clear
+          <Trash size={14} />
         </button>
       </div>
 
       <div
         ref={scrollRef}
-        className="h-40 overflow-y-auto space-y-1 text-sm scrollbar-thin scrollbar-thumb-[#4A4E69] scrollbar-track-transparent"
+        className="h-32 overflow-y-auto space-y-1 text-xs"
       >
         {recentLogs.length === 0 ? (
-          <div className="text-center py-6 space-y-2">
-            <p className="text-[#9A8C98]">⚔️ Battle in progress!</p>
-            <p className="text-xs text-[#9A8C98]/60">
-              Your hero attacks automatically. Watch the HP bars!
-            </p>
-          </div>
+          <p className="text-[#6c7086] text-center py-4">Combat started...</p>
         ) : (
           recentLogs.map(entry => (
             <div
               key={entry.id}
-              className="py-1.5 px-2 rounded bg-[#4A4E69]/20 hover:bg-[#4A4E69]/30 transition-colors flex items-center gap-2"
+              className="py-1 px-2 rounded bg-[#181825] text-[#a6adc8]"
             >
-              <span className="text-base">{TYPE_ICONS[entry.type] || '•'}</span>
-              <span style={{ color: entry.color || '#9A8C98' }}>
-                {entry.message}
-              </span>
+              {entry.message}
             </div>
           ))
         )}
       </div>
 
-      {/* Stats footer */}
       {killCount > 0 && (
-        <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-[#9A8C98]">
-          <span>Monsters slain: <span className="text-green-400 font-bold">{killCount}</span></span>
-          <span className="text-[#9A8C98]/50">{recentLogs.length} events</span>
+        <div className="mt-3 pt-3 border-t border-[#313244] text-xs text-[#6c7086]">
+          Total kills: <span className="text-[#a6e3a1]">{killCount}</span>
         </div>
       )}
     </div>

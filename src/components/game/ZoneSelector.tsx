@@ -1,7 +1,7 @@
 'use client';
 
 import { useGameStore } from '@/store/gameStore';
-import { Lock, CheckCircle } from '@phosphor-icons/react';
+import { Lock, CheckCircle, MapPin } from '@phosphor-icons/react';
 
 export function ZoneSelector() {
   const zones = useGameStore(s => s.zones);
@@ -11,8 +11,11 @@ export function ZoneSelector() {
   const changeZone = useGameStore(s => s.changeZone);
 
   return (
-    <div className="bg-[#22223B] rounded-xl p-4">
-      <h3 className="font-bold text-white mb-3">Zones</h3>
+    <div className="bg-[#1e1e2e] rounded-xl p-4 border border-[#313244]">
+      <h3 className="font-semibold text-[#cdd6f4] flex items-center gap-2 mb-3">
+        <MapPin size={16} className="text-[#89b4fa]" />
+        Zones
+      </h3>
 
       <div className="space-y-2">
         {zones.map(zone => {
@@ -28,28 +31,32 @@ export function ZoneSelector() {
               className={`
                 w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all
                 ${isActive
-                  ? 'bg-gradient-to-r ' + zone.background + ' ring-2 ring-white/30'
+                  ? 'bg-[#313244] ring-1 ring-[#89b4fa]'
                   : zone.unlocked
-                    ? 'bg-[#4A4E69]/50 hover:bg-[#4A4E69]'
-                    : 'bg-[#4A4E69]/20 cursor-not-allowed'
+                    ? 'bg-[#181825] hover:bg-[#313244]'
+                    : 'bg-[#181825]/50 cursor-not-allowed opacity-50'
                 }
               `}
             >
-              <span className="text-2xl">{zone.emoji}</span>
+              <div className={`
+                w-8 h-8 rounded-lg flex items-center justify-center text-sm
+                ${isActive ? 'bg-[#89b4fa]/20 text-[#89b4fa]' : 'bg-[#313244] text-[#6c7086]'}
+              `}>
+                {zone.level}
+              </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className={`font-medium truncate ${zone.unlocked ? 'text-white' : 'text-[#9A8C98]'}`}>
+                  <span className={`font-medium truncate text-sm ${zone.unlocked ? 'text-[#cdd6f4]' : 'text-[#6c7086]'}`}>
                     {zone.name}
                   </span>
-                  {bossKilled && <CheckCircle size={14} className="text-green-400" weight="fill" />}
+                  {bossKilled && <CheckCircle size={14} className="text-[#a6e3a1]" weight="fill" />}
                 </div>
-                <span className="text-xs text-white/60">Lv. {zone.level}</span>
               </div>
 
               {!zone.unlocked && (
-                <div className="flex items-center gap-1 text-[#9A8C98]">
-                  <Lock size={16} />
+                <div className="flex items-center gap-1 text-[#6c7086]">
+                  <Lock size={14} />
                   <span className="text-xs">
                     {!meetsLevel ? `Lv.${zone.requiredLevel}` : 'Boss'}
                   </span>
