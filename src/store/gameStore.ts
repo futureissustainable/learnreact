@@ -1306,10 +1306,10 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'codequest-rpg-storage',
-      version: 11,
+      version: 12,
       migrate: (persistedState: unknown, version: number) => {
-        // Force fresh - abilities now locked behind concept progression
-        if (version < 11) {
+        // Force fresh - unified progression: concepts unlock abilities + script features
+        if (version < 12) {
           return getInitialState();
         }
         return persistedState as GameState;

@@ -91,6 +91,7 @@ function generateCode(condition: ScriptCondition, action: ScriptAction): string 
 export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
   const hero = useGameStore(s => s.hero);
   const inventory = useGameStore(s => s.inventory);
+  const concepts = useGameStore(s => s.concepts);
   const toggleScript = useGameStore(s => s.toggleScript);
   const addScript = useGameStore(s => s.addScript);
   const deleteScript = useGameStore(s => s.deleteScript);
@@ -101,16 +102,21 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
   const [conditionPercent, setConditionPercent] = useState(50);
   const [scriptName, setScriptName] = useState('');
 
-  // Get all unlocked features from inventory + equipped items
+  // Get all unlocked features from LEARNED CONCEPTS + inventory/equipment
   const getUnlockedFeatures = (): Set<ScriptFeature> => {
     const features = new Set<ScriptFeature>();
 
-    // Check inventory
+    // PRIMARY SOURCE: Learned concepts unlock features!
+    concepts.forEach(concept => {
+      if (concept.learned && concept.unlocksFeatures) {
+        concept.unlocksFeatures.forEach(feature => features.add(feature));
+      }
+    });
+
+    // SECONDARY: Equipment can also unlock features (legacy support)
     inventory.forEach(item => {
       if (item.unlocks) features.add(item.unlocks);
     });
-
-    // Check equipped items
     if (hero.equipment.weapon?.unlocks) features.add(hero.equipment.weapon.unlocks);
     if (hero.equipment.armor?.unlocks) features.add(hero.equipment.armor.unlocks);
     if (hero.equipment.accessory?.unlocks) features.add(hero.equipment.accessory.unlocks);
@@ -180,30 +186,34 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
             <span className="text-3xl">⚙️</span>
           </div>
 
-          <h4 className="text-[#f9e2af] font-medium mb-2">Automation Locked</h4>
+          <h4 className="text-[#f9e2af] font-medium mb-2">Learn to Automate!</h4>
           <p className="text-sm text-[#6c7086] mb-4">
-            You must click <span className="text-[#a6e3a1]">Attack</span> manually for now.
+            Click <span className="text-[#a6e3a1]">Attack</span> and <span className="text-[#a6e3a1]">Heal</span> manually for now.
           </p>
 
           <div className="bg-[#181825] rounded-lg p-4 border border-[#cba6f7]/30 mb-4">
             <p className="text-xs text-[#cba6f7] mb-2">To unlock automation:</p>
             <p className="text-sm text-[#cdd6f4]">
-              Buy <span className="text-[#f9e2af] font-medium">Automation Core</span> from the Shop
+              Learn <span className="text-[#f9e2af] font-medium">Variables</span> by defeating 10 enemies
             </p>
-            <p className="text-xs text-[#6c7086] mt-2">
-              Cost: ~50 gold (kill ~10 enemies manually)
-            </p>
+            <div className="mt-3 p-2 bg-[#1e1e2e] rounded font-mono text-xs text-[#89b4fa]">
+              <span className="text-[#cba6f7]">while</span> (<span className="text-[#f9e2af]">true</span>) {'{'}
+              <br />
+              {'  '}<span className="text-[#a6e3a1]">attack</span>();
+              <br />
+              {'}'}
+            </div>
           </div>
 
           <div className="flex items-center justify-center gap-2 text-xs text-[#6c7086]">
-            <ShoppingCart size={14} />
-            <span>Go to Shop tab</span>
+            <Code size={14} />
+            <span>Check Concepts tab for progress</span>
           </div>
         </div>
 
         <div className="mt-4 pt-4 border-t border-[#313244]">
           <p className="text-xs text-[#6c7086] text-center">
-            💡 This is how real programming works - you start manual, then automate!
+            💡 Learning = Power! Each concept unlocks new abilities AND automation features!
           </p>
         </div>
       </div>

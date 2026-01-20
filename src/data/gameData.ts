@@ -938,471 +938,129 @@ export const DEFAULT_SCRIPTS: AutoScript[] = [];
 //
 // Gold scales with zone, items unlock WHEN YOU NEED THEM
 
+// ============================================================
+// SHOP ITEMS - Pure stat upgrades!
+// Gold = Power (stats), Learning = Efficiency (abilities + automation)
+// ============================================================
 export const SHOP_ITEMS: Equipment[] = [
   // ============================================================
-  // TIER 0: THE FIRST UNLOCK (~50g from 10 manual kills)
-  // This is THE pivotal moment - automation begins!
+  // TIER 1: STARTER GEAR (~30-80g)
+  // Basic stat boosts while you learn Variables
   // ============================================================
   {
-    id: 'automation-core',
-    name: 'Automation Core',
-    type: 'accessory',
-    rarity: 'common',
-    level: 1,
-    stats: { attack: 1 },
-    description: 'The foundation of all automation. Your first loop!',
-    emoji: '⚙️',
-    unlocks: 'loop_while_true',
-    unlocksDescription: 'Unlocks: while(true) { } + attack() - Basic automation!'
-  },
-
-  // ============================================================
-  // TIER 1: SURVIVAL BASICS (~80-120g)
-  // Zone 1 mobs start hitting back - need healing automation
-  // ============================================================
-  {
-    id: 'healing-tome',
-    name: 'Healing Tome',
-    type: 'accessory',
-    rarity: 'common',
-    level: 1,
-    stats: { maxHp: 10, maxMana: 10 },
-    description: 'Ancient knowledge of restoration.',
-    emoji: '📖',
-    unlocks: 'action_heal',
-    unlocksDescription: 'Unlocks: heal() action in scripts'
-  },
-  {
-    id: 'conditional-blade',
-    name: 'Conditional Blade',
+    id: 'training-sword',
+    name: 'Training Sword',
     type: 'weapon',
     rarity: 'common',
     level: 1,
     stats: { attack: 3 },
-    description: 'A blade that teaches you to check your health.',
-    emoji: '🗡️',
-    unlocks: 'condition_hp_below',
-    unlocksDescription: 'Unlocks: if (hp < X%) - React when hurt!'
-  },
-
-  // ============================================================
-  // TIER 2: OFFENSIVE OPTIONS (~150-250g)
-  // Zone 1 boss / Zone 2 mobs are tanky - need burst damage
-  // ============================================================
-  {
-    id: 'power-gauntlets',
-    name: 'Power Gauntlets',
-    type: 'armor',
-    rarity: 'uncommon',
-    level: 2,
-    stats: { attack: 5, defense: 2 },
-    description: 'Empowers your strikes with raw force.',
-    emoji: '🧤',
-    unlocks: 'action_power_strike',
-    unlocksDescription: 'Unlocks: powerStrike() - Heavy damage ability'
-  },
-  {
-    id: 'executioner-blade',
-    name: 'Executioner Blade',
-    type: 'weapon',
-    rarity: 'uncommon',
-    level: 2,
-    stats: { attack: 6, critChance: 0.05 },
-    description: 'Senses when enemies are weak.',
-    emoji: '⚔️',
-    unlocks: 'condition_enemy_hp_below',
-    unlocksDescription: 'Unlocks: if (enemy.hp < X%) - Finish them!'
-  },
-  {
-    id: 'mana-crystal',
-    name: 'Mana Crystal',
-    type: 'accessory',
-    rarity: 'uncommon',
-    level: 2,
-    stats: { maxMana: 25 },
-    description: 'Sense your magical reserves.',
-    emoji: '💎',
-    unlocks: 'condition_mana_above',
-    unlocksDescription: 'Unlocks: if (mana > X%) - Use abilities wisely'
-  },
-
-  // ============================================================
-  // TIER 3: COMBINING CONDITIONS (~300-500g)
-  // Zone 2 requires smarter scripts - combine conditions!
-  // ============================================================
-  {
-    id: 'amulet-of-and',
-    name: 'Amulet of AND',
-    type: 'accessory',
-    rarity: 'rare',
-    level: 3,
-    stats: { attack: 4, defense: 4 },
-    description: 'Both conditions must be true.',
-    emoji: '🔗',
-    unlocks: 'operator_and',
-    unlocksDescription: 'Unlocks: && - if (hp < 50 && mana > 20)'
-  },
-  {
-    id: 'amulet-of-or',
-    name: 'Amulet of OR',
-    type: 'accessory',
-    rarity: 'rare',
-    level: 3,
-    stats: { attack: 5, defense: 3 },
-    description: 'Either condition can be true.',
-    emoji: '🔀',
-    unlocks: 'operator_or',
-    unlocksDescription: 'Unlocks: || - if (hp < 30 || enemy.hp < 10)'
-  },
-  {
-    id: 'cooldown-ring',
-    name: 'Cooldown Ring',
-    type: 'accessory',
-    rarity: 'rare',
-    level: 3,
-    stats: { attackSpeed: 0.1 },
-    description: 'Know when abilities are ready.',
-    emoji: '💍',
-    unlocks: 'condition_ability_ready',
-    unlocksDescription: 'Unlocks: if (ability.ready) - Optimal timing'
-  },
-
-  // ============================================================
-  // TIER 4: RESOURCE MANAGEMENT (~600-1000g)
-  // Zone 2 boss / Zone 3 - longer fights, need mana management
-  // ============================================================
-  {
-    id: 'meditation-orb',
-    name: 'Meditation Orb',
-    type: 'accessory',
-    rarity: 'rare',
-    level: 4,
-    stats: { maxMana: 30, defense: 5 },
-    description: 'Focus your mind to restore mana.',
-    emoji: '🔮',
-    unlocks: 'action_meditate',
-    unlocksDescription: 'Unlocks: meditate() - Restore mana'
-  },
-  {
-    id: 'ring-of-negation',
-    name: 'Ring of Negation',
-    type: 'accessory',
-    rarity: 'rare',
-    level: 4,
-    stats: { critChance: 0.1 },
-    description: 'Flip conditions - true becomes false.',
-    emoji: '❌',
-    unlocks: 'operator_not',
-    unlocksDescription: 'Unlocks: ! - if (!healing) attack()'
-  },
-  {
-    id: 'defensive-ward',
-    name: 'Defensive Ward',
-    type: 'armor',
-    rarity: 'rare',
-    level: 4,
-    stats: { defense: 12, maxHp: 30 },
-    description: 'Teaches the art of blocking.',
-    emoji: '🛡️',
-    unlocks: 'action_defend',
-    unlocksDescription: 'Unlocks: defend() - Block incoming damage'
-  },
-
-  // ============================================================
-  // TIER 5: VARIABLES (~1200-1800g)
-  // Zone 3 - need to track state between actions
-  // ============================================================
-  {
-    id: 'variable-blade',
-    name: 'Variable Blade',
-    type: 'weapon',
-    rarity: 'epic',
-    level: 5,
-    stats: { attack: 15 },
-    description: 'Store values that change.',
-    emoji: '🔱',
-    unlocks: 'variables_let',
-    unlocksDescription: 'Unlocks: let x = value - Track state!'
-  },
-  {
-    id: 'constant-shield',
-    name: 'Constant Shield',
-    type: 'armor',
-    rarity: 'epic',
-    level: 5,
-    stats: { defense: 18, maxHp: 40 },
-    description: 'Define unchanging values.',
-    emoji: '🛡️',
-    unlocks: 'variables_const',
-    unlocksDescription: 'Unlocks: const THRESHOLD = 30'
-  },
-  {
-    id: 'calculator-charm',
-    name: 'Calculator Charm',
-    type: 'accessory',
-    rarity: 'epic',
-    level: 5,
-    stats: { attack: 8, critDamage: 0.25 },
-    description: 'Do math in your scripts.',
-    emoji: '🧮',
-    unlocks: 'math_operations',
-    unlocksDescription: 'Unlocks: +, -, *, / in conditions'
-  },
-
-  // ============================================================
-  // TIER 6: FOR LOOPS (~2000-3000g)
-  // Zone 3 boss / Zone 4 - multi-hit combos, repeated actions
-  // ============================================================
-  {
-    id: 'loop-blade',
-    name: 'Loop Blade',
-    type: 'weapon',
-    rarity: 'epic',
-    level: 6,
-    stats: { attack: 20, attackSpeed: 0.15 },
-    description: 'Strike a precise number of times.',
-    emoji: '🔄',
-    unlocks: 'loop_for',
-    unlocksDescription: 'Unlocks: for (let i=0; i<3; i++) - Combos!'
-  },
-  {
-    id: 'counter-ring',
-    name: 'Counter Ring',
-    type: 'accessory',
-    rarity: 'epic',
-    level: 6,
-    stats: { attack: 10, critChance: 0.12 },
-    description: 'Track your loop iteration.',
-    emoji: '🔢',
-    unlocks: 'loop_counter',
-    unlocksDescription: 'Unlocks: Use i in conditions'
-  },
-  {
-    id: 'escape-dagger',
-    name: 'Escape Dagger',
-    type: 'weapon',
-    rarity: 'epic',
-    level: 6,
-    stats: { attack: 16, critDamage: 0.3 },
-    description: 'Exit loops when needed.',
-    emoji: '🗡️',
-    unlocks: 'loop_break',
-    unlocksDescription: 'Unlocks: break - Exit loop early'
-  },
-
-  // ============================================================
-  // TIER 7: ARRAYS (~3500-5000g)
-  // Zone 4 - multiple enemies, need to manage groups
-  // ============================================================
-  {
-    id: 'foreach-flail',
-    name: 'forEach Flail',
-    type: 'weapon',
-    rarity: 'epic',
-    level: 7,
-    stats: { attack: 25, attackSpeed: 0.1 },
-    description: 'Hit every enemy in sequence.',
-    emoji: '🔗',
-    unlocks: 'array_foreach',
-    unlocksDescription: 'Unlocks: enemies.forEach(e => attack(e))'
-  },
-  {
-    id: 'filter-lens',
-    name: 'Filter Lens',
-    type: 'accessory',
-    rarity: 'epic',
-    level: 7,
-    stats: { critChance: 0.15, critDamage: 0.35 },
-    description: 'Target only what matches.',
-    emoji: '🔍',
-    unlocks: 'array_filter',
-    unlocksDescription: 'Unlocks: .filter(e => e.hp < 50)'
-  },
-  {
-    id: 'map-staff',
-    name: 'Map Staff',
-    type: 'weapon',
-    rarity: 'epic',
-    level: 7,
-    stats: { attack: 22, maxMana: 40 },
-    description: 'Transform every target.',
-    emoji: '🗺️',
-    unlocks: 'array_map',
-    unlocksDescription: 'Unlocks: .map(e => e.hp * 2)'
-  },
-
-  // ============================================================
-  // TIER 8: FUNCTIONS (~6000-9000g)
-  // Zone 4 boss / Zone 5 - complex strategies need organization
-  // ============================================================
-  {
-    id: 'function-grimoire',
-    name: 'Function Grimoire',
-    type: 'accessory',
-    rarity: 'legendary',
-    level: 8,
-    stats: { maxMana: 60, attack: 18 },
-    description: 'Name and reuse your strategies.',
-    emoji: '📕',
-    unlocks: 'function_define',
-    unlocksDescription: 'Unlocks: function heal_combo() { }'
-  },
-  {
-    id: 'parameter-pouch',
-    name: 'Parameter Pouch',
-    type: 'accessory',
-    rarity: 'legendary',
-    level: 8,
-    stats: { attack: 15, critChance: 0.15 },
-    description: 'Pass values to functions.',
-    emoji: '👝',
-    unlocks: 'function_params',
-    unlocksDescription: 'Unlocks: function attack(target) { }'
-  },
-  {
-    id: 'arrow-quiver',
-    name: 'Arrow Quiver',
-    type: 'accessory',
-    rarity: 'legendary',
-    level: 8,
-    stats: { attackSpeed: 0.3, attack: 12 },
-    description: 'Write functions in shorthand.',
-    emoji: '🏹',
-    unlocks: 'function_arrow',
-    unlocksDescription: 'Unlocks: const hit = () => attack()'
-  },
-
-  // ============================================================
-  // TIER 9: OBJECTS (~10000-15000g)
-  // Zone 5 - need structured data for complex decisions
-  // ============================================================
-  {
-    id: 'property-pickaxe',
-    name: 'Property Pickaxe',
-    type: 'weapon',
-    rarity: 'legendary',
-    level: 9,
-    stats: { attack: 40, critChance: 0.2 },
-    description: 'Access any property.',
-    emoji: '⛏️',
-    unlocks: 'object_access',
-    unlocksDescription: 'Unlocks: enemy.hp, player.mana'
-  },
-  {
-    id: 'destructure-gauntlets',
-    name: 'Destructure Gauntlets',
-    type: 'armor',
-    rarity: 'legendary',
-    level: 9,
-    stats: { defense: 30, attack: 20, maxHp: 100 },
-    description: 'Extract multiple values at once.',
-    emoji: '🧤',
-    unlocks: 'object_destructure',
-    unlocksDescription: 'Unlocks: const { hp, mana } = player'
-  },
-
-  // ============================================================
-  // TIER 10: ASYNC (~18000-25000g)
-  // Zone 5 boss - timing-based mechanics
-  // ============================================================
-  {
-    id: 'promise-pendant',
-    name: 'Promise Pendant',
-    type: 'accessory',
-    rarity: 'legendary',
-    level: 10,
-    stats: { maxMana: 100, attackSpeed: 0.3, critChance: 0.18 },
-    description: 'Chain actions over time.',
-    emoji: '💫',
-    unlocks: 'promise_then',
-    unlocksDescription: 'Unlocks: attack().then(() => heal())'
-  },
-  {
-    id: 'await-blade',
-    name: 'Blade of Await',
-    type: 'weapon',
-    rarity: 'legendary',
-    level: 10,
-    stats: { attack: 60, critChance: 0.25, critDamage: 0.6 },
-    description: 'Wait for the perfect moment.',
-    emoji: '⚡',
-    unlocks: 'async_await',
-    unlocksDescription: 'Unlocks: await heal(); attack();'
-  },
-
-  // ============================================================
-  // TIER 11: REACT (~30000-50000g)
-  // Endgame / New Game+ - React concepts as ultimate power
-  // ============================================================
-  {
-    id: 'state-crystal',
-    name: 'State Crystal',
-    type: 'accessory',
-    rarity: 'legendary',
-    level: 11,
-    stats: { attack: 35, defense: 35, maxHp: 150, maxMana: 120 },
-    description: 'Remember values between renders.',
-    emoji: '💎',
-    unlocks: 'react_useState',
-    unlocksDescription: 'Unlocks: const [hp, setHp] = useState(100)'
-  },
-  {
-    id: 'effect-crown',
-    name: 'Effect Crown',
-    type: 'armor',
-    rarity: 'legendary',
-    level: 11,
-    stats: { defense: 45, critChance: 0.3, lifeSteal: 0.12 },
-    description: 'Trigger effects at the right time.',
-    emoji: '👑',
-    unlocks: 'react_useEffect',
-    unlocksDescription: 'Unlocks: useEffect(() => { }, [hp])'
-  },
-  {
-    id: 'prop-blade',
-    name: 'Blade of Props',
-    type: 'weapon',
-    rarity: 'legendary',
-    level: 11,
-    stats: { attack: 75, critDamage: 0.7, attackSpeed: 0.25 },
-    description: 'Pass data to your components.',
-    emoji: '⚔️',
-    unlocks: 'react_props',
-    unlocksDescription: 'Unlocks: <Attack damage={100} />'
-  },
-
-  // ============================================================
-  // STAT-ONLY ITEMS (no unlocks, just power when you need it)
-  // ============================================================
-  {
-    id: 'iron-sword',
-    name: 'Iron Sword',
-    type: 'weapon',
-    rarity: 'uncommon',
-    level: 2,
-    stats: { attack: 6 },
-    description: 'A sturdy iron blade. Pure damage.',
+    description: 'A basic blade for beginners.',
     emoji: '🗡️'
   },
   {
-    id: 'chainmail',
-    name: 'Chainmail Armor',
+    id: 'cloth-armor',
+    name: 'Cloth Armor',
     type: 'armor',
+    rarity: 'common',
+    level: 1,
+    stats: { defense: 2, maxHp: 15 },
+    description: 'Simple protection.',
+    emoji: '👕'
+  },
+  {
+    id: 'health-charm',
+    name: 'Health Charm',
+    type: 'accessory',
+    rarity: 'common',
+    level: 1,
+    stats: { maxHp: 20 },
+    description: 'Grants extra vitality.',
+    emoji: '💚'
+  },
+
+  // ============================================================
+  // TIER 2: IMPROVED GEAR (~100-200g)
+  // Better stats as you learn Conditionals
+  // ============================================================
+  {
+    id: 'iron-blade',
+    name: 'Iron Blade',
+    type: 'weapon',
+    rarity: 'common',
+    level: 2,
+    stats: { attack: 6, critChance: 0.03 },
+    description: 'A solid iron weapon.',
+    emoji: '⚔️'
+  },
+  {
+    id: 'leather-vest',
+    name: 'Leather Vest',
+    type: 'armor',
+    rarity: 'common',
+    level: 2,
+    stats: { defense: 5, maxHp: 25 },
+    description: 'Flexible and protective.',
+    emoji: '🥋'
+  },
+  {
+    id: 'mana-pendant',
+    name: 'Mana Pendant',
+    type: 'accessory',
     rarity: 'uncommon',
     level: 2,
-    stats: { defense: 6, maxHp: 30 },
-    description: 'Solid protection.',
+    stats: { maxMana: 20 },
+    description: 'Increases magical reserves.',
+    emoji: '💎'
+  },
+
+  // ============================================================
+  // TIER 3: COMBAT GEAR (~250-400g)
+  // Stronger stats for Loops & Operators
+  // ============================================================
+  {
+    id: 'steel-sword',
+    name: 'Steel Sword',
+    type: 'weapon',
+    rarity: 'uncommon',
+    level: 3,
+    stats: { attack: 10, critChance: 0.05 },
+    description: 'Well-forged steel.',
+    emoji: '⚔️'
+  },
+  {
+    id: 'chain-armor',
+    name: 'Chain Armor',
+    type: 'armor',
+    rarity: 'uncommon',
+    level: 3,
+    stats: { defense: 10, maxHp: 40 },
+    description: 'Interlocked rings of protection.',
     emoji: '🛡️'
   },
   {
-    id: 'steel-blade',
-    name: 'Steel Blade',
+    id: 'warriors-ring',
+    name: "Warrior's Ring",
+    type: 'accessory',
+    rarity: 'uncommon',
+    level: 3,
+    stats: { attack: 5, critDamage: 0.15 },
+    description: 'Enhances combat prowess.',
+    emoji: '💍'
+  },
+
+  // ============================================================
+  // TIER 4: VETERAN GEAR (~500-800g)
+  // Strong stats for Functions & Zone 2
+  // ============================================================
+  {
+    id: 'knights-blade',
+    name: "Knight's Blade",
     type: 'weapon',
     rarity: 'rare',
-    level: 3,
-    stats: { attack: 12, critDamage: 0.2 },
-    description: 'Finely crafted steel.',
-    emoji: '⚔️'
+    level: 4,
+    stats: { attack: 16, critChance: 0.08, attackSpeed: 0.05 },
+    description: 'A noble warrior\'s weapon.',
+    emoji: '🗡️'
   },
   {
     id: 'plate-armor',
@@ -1410,90 +1068,250 @@ export const SHOP_ITEMS: Equipment[] = [
     type: 'armor',
     rarity: 'rare',
     level: 4,
-    stats: { defense: 14, maxHp: 50 },
-    description: 'Heavy but very protective.',
+    stats: { defense: 18, maxHp: 60 },
+    description: 'Heavy but effective.',
     emoji: '🛡️'
   },
   {
-    id: 'ruby-ring',
-    name: 'Ruby Ring',
+    id: 'arcane-focus',
+    name: 'Arcane Focus',
     type: 'accessory',
     rarity: 'rare',
     level: 4,
-    stats: { critChance: 0.1, critDamage: 0.15 },
-    description: 'A gem that loves critical hits.',
-    emoji: '💍'
+    stats: { maxMana: 35, attack: 8 },
+    description: 'Channels magical energy.',
+    emoji: '🔮'
+  },
+
+  // ============================================================
+  // TIER 5: ELITE GEAR (~1000-1500g)
+  // High stats for Arrays & Zone 3
+  // ============================================================
+  {
+    id: 'berserker-axe',
+    name: 'Berserker Axe',
+    type: 'weapon',
+    rarity: 'rare',
+    level: 5,
+    stats: { attack: 24, critChance: 0.1, critDamage: 0.25 },
+    description: 'Forged in fury.',
+    emoji: '🪓'
   },
   {
-    id: 'vampiric-blade',
-    name: 'Vampiric Blade',
+    id: 'guardian-plate',
+    name: 'Guardian Plate',
+    type: 'armor',
+    rarity: 'rare',
+    level: 5,
+    stats: { defense: 25, maxHp: 80, lifeSteal: 0.03 },
+    description: 'Blessed with protective magic.',
+    emoji: '🛡️'
+  },
+  {
+    id: 'speed-talisman',
+    name: 'Speed Talisman',
+    type: 'accessory',
+    rarity: 'rare',
+    level: 5,
+    stats: { attackSpeed: 0.15, critChance: 0.08 },
+    description: 'Hastens all actions.',
+    emoji: '⚡'
+  },
+
+  // ============================================================
+  // TIER 6: CHAMPION GEAR (~2000-3000g)
+  // Epic stats for Objects & Zone 3 Boss
+  // ============================================================
+  {
+    id: 'champions-blade',
+    name: "Champion's Blade",
     type: 'weapon',
     rarity: 'epic',
     level: 6,
-    stats: { attack: 16, lifeSteal: 0.08 },
-    description: 'Drain life from your enemies.',
-    emoji: '🩸'
+    stats: { attack: 35, critChance: 0.12, critDamage: 0.35 },
+    description: 'Wielded by legendary heroes.',
+    emoji: '⚔️'
   },
   {
-    id: 'berserker-helm',
-    name: 'Berserker Helm',
+    id: 'champions-armor',
+    name: "Champion's Armor",
+    type: 'armor',
+    rarity: 'epic',
+    level: 6,
+    stats: { defense: 35, maxHp: 100, lifeSteal: 0.05 },
+    description: 'Worn by the greatest warriors.',
+    emoji: '🛡️'
+  },
+  {
+    id: 'power-core',
+    name: 'Power Core',
+    type: 'accessory',
+    rarity: 'epic',
+    level: 6,
+    stats: { attack: 15, maxMana: 40, attackSpeed: 0.1 },
+    description: 'Pure concentrated power.',
+    emoji: '💠'
+  },
+
+  // ============================================================
+  // TIER 7: MASTER GEAR (~4000-6000g)
+  // Powerful stats for Array Methods & Zone 4
+  // ============================================================
+  {
+    id: 'void-blade',
+    name: 'Void Blade',
+    type: 'weapon',
+    rarity: 'epic',
+    level: 7,
+    stats: { attack: 50, critChance: 0.15, critDamage: 0.45 },
+    description: 'Cuts through reality itself.',
+    emoji: '🌀'
+  },
+  {
+    id: 'void-armor',
+    name: 'Void Armor',
     type: 'armor',
     rarity: 'epic',
     level: 7,
-    stats: { attack: 15, critChance: 0.15, defense: -5 },
-    description: 'Power at the cost of defense.',
-    emoji: '⛑️'
+    stats: { defense: 45, maxHp: 120, lifeSteal: 0.08 },
+    description: 'Woven from darkness.',
+    emoji: '🖤'
   },
   {
-    id: 'dragon-scale',
-    name: 'Dragon Scale Armor',
+    id: 'infinity-band',
+    name: 'Infinity Band',
+    type: 'accessory',
+    rarity: 'epic',
+    level: 7,
+    stats: { attack: 20, attackSpeed: 0.2, critChance: 0.1 },
+    description: 'Limitless potential.',
+    emoji: '♾️'
+  },
+
+  // ============================================================
+  // TIER 8: LEGEND GEAR (~6000-10000g)
+  // Async concepts & Zone 4
+  // ============================================================
+  {
+    id: 'temporal-blade',
+    name: 'Temporal Blade',
+    type: 'weapon',
+    rarity: 'legendary',
+    level: 8,
+    stats: { attack: 65, critChance: 0.18, attackSpeed: 0.2 },
+    description: 'Strikes across time itself.',
+    emoji: '⏰'
+  },
+  {
+    id: 'temporal-armor',
+    name: 'Temporal Armor',
+    type: 'armor',
+    rarity: 'legendary',
+    level: 8,
+    stats: { defense: 55, maxHp: 140, lifeSteal: 0.1 },
+    description: 'Shifts between moments.',
+    emoji: '⌛'
+  },
+  {
+    id: 'eternity-ring',
+    name: 'Eternity Ring',
+    type: 'accessory',
+    rarity: 'legendary',
+    level: 8,
+    stats: { attack: 25, maxMana: 60, critDamage: 0.5 },
+    description: 'Power without end.',
+    emoji: '💫'
+  },
+
+  // ============================================================
+  // TIER 9: ULTIMATE GEAR (~12000-20000g)
+  // React concepts & Zone 5
+  // ============================================================
+  {
+    id: 'react-blade',
+    name: 'Blade of React',
+    type: 'weapon',
+    rarity: 'legendary',
+    level: 9,
+    stats: { attack: 80, critChance: 0.22, critDamage: 0.6 },
+    description: 'Reactive to every situation.',
+    emoji: '⚛️'
+  },
+  {
+    id: 'component-armor',
+    name: 'Component Armor',
     type: 'armor',
     rarity: 'legendary',
     level: 9,
-    stats: { defense: 30, maxHp: 100, lifeSteal: 0.05 },
-    description: 'Forged from ancient dragon scales.',
-    emoji: '🐉'
+    stats: { defense: 65, maxHp: 160, lifeSteal: 0.12 },
+    description: 'Reusable and composable.',
+    emoji: '🧩'
   },
   {
-    id: 'infinity-edge',
-    name: 'Infinity Edge',
+    id: 'state-gem',
+    name: 'State Gem',
+    type: 'accessory',
+    rarity: 'legendary',
+    level: 9,
+    stats: { attack: 30, defense: 30, maxMana: 80 },
+    description: 'Remembers everything.',
+    emoji: '💎'
+  },
+
+  // ============================================================
+  // TIER 10: ENDGAME GEAR (~25000-40000g)
+  // Final boss & mastery
+  // ============================================================
+  {
+    id: 'developers-keyboard',
+    name: "Developer's Keyboard",
     type: 'weapon',
     rarity: 'legendary',
     level: 10,
-    stats: { attack: 50, critChance: 0.25, critDamage: 0.75 },
-    description: 'The edge between victory and defeat.',
-    emoji: '♾️'
+    stats: { attack: 100, critChance: 0.25, critDamage: 0.75, attackSpeed: 0.15 },
+    description: 'The ultimate tool of creation.',
+    emoji: '⌨️'
   },
   {
     id: 'developers-hoodie',
     name: "Developer's Hoodie",
     type: 'armor',
     rarity: 'legendary',
-    level: 11,
-    stats: { defense: 25, maxMana: 100, maxHp: 80, attackSpeed: 0.1 },
+    level: 10,
+    stats: { defense: 75, maxHp: 200, maxMana: 100, lifeSteal: 0.15 },
     description: 'The armor of choice for coders everywhere.',
     emoji: '🧥'
+  },
+  {
+    id: 'coffee-mug',
+    name: 'Infinite Coffee Mug',
+    type: 'accessory',
+    rarity: 'legendary',
+    level: 10,
+    stats: { attack: 40, attackSpeed: 0.3, maxMana: 100, critChance: 0.2 },
+    description: 'Never runs empty. Ever.',
+    emoji: '☕'
   }
 ];
 
 export function getShopItemPrice(item: Equipment): number {
   // Prices scale to match gold income progression:
-  // Zone 1 (~10g/kill): Tier 1 items 50-100g → 5-10 kills
-  // Zone 3 (~100g/kill): Tier 5-6 items 500-1500g → 5-15 kills
-  // Zone 5 (~1000g/kill): Tier 10-12 items 5k-15k → 5-15 kills
+  // Zone 1 (~10g/kill): Tier 1 items 30-80g → 3-8 kills
+  // Zone 3 (~100g/kill): Tier 5-6 items 800-2000g → 8-20 kills
+  // Zone 5 (~500g/kill): Tier 9-10 items 10k-30k → 20-60 kills
 
-  const basePrice = item.unlocks ? 40 : 25;
+  const basePrice = 30;
 
-  // 1.6x per level - matches gold scaling of 1.35^level with some buffer
-  const levelMultiplier = Math.pow(1.6, item.level - 1);
+  // 1.7x per level - matches gold scaling progression
+  const levelMultiplier = Math.pow(1.7, item.level - 1);
 
-  // Rarity adds moderate premium, not exponential
+  // Rarity adds premium
   const rarityMultiplier = {
     common: 1,
-    uncommon: 1.5,
-    rare: 2.5,
-    epic: 4,
-    legendary: 6
+    uncommon: 1.4,
+    rare: 2.2,
+    epic: 3.5,
+    legendary: 5
   };
 
   return Math.floor(basePrice * levelMultiplier * rarityMultiplier[item.rarity]);
@@ -1502,13 +1320,18 @@ export function getShopItemPrice(item: Equipment): number {
 // ============ JS CONCEPTS ============
 
 export const JS_CONCEPTS: JsConcept[] = [
+  // ============================================================
+  // TIER 1: VARIABLES - First automation! (kill 10 enemies)
+  // This is THE pivotal moment - you unlock while(true) + attack()
+  // ============================================================
   {
     id: 'variables',
     name: 'Variables',
     category: 'variables',
-    description: 'Store and name values with let, const, and var.',
-    codeExample: `let damage = 10;\nconst MAX_HP = 100;\nlet playerName = "Hero";`,
+    description: 'Store values and automate your first loop!',
+    codeExample: `let damage = 10;\nwhile (true) {\n  attack();\n}`,
     unlocksAbilities: ['power-strike', 'defend', 'meditate'],
+    unlocksFeatures: ['loop_while_true', 'variables_let', 'variables_const', 'action_heal'],
     unlocksConditions: [],
     statBonus: { attack: 5 },
     learned: false,
@@ -1516,160 +1339,237 @@ export const JS_CONCEPTS: JsConcept[] = [
     currentXp: 0,
     prerequisites: [],
     learnByDoing: [
-      { id: 'kill-10', description: 'Defeat 10 enemies with Attack', type: 'kill_count', target: 10, current: 0, completed: false }
+      { id: 'kill-10', description: 'Defeat 10 enemies manually', type: 'kill_count', target: 10, current: 0, completed: false }
     ]
   },
+
+  // ============================================================
+  // TIER 2: CONDITIONALS - React to danger! (use Heal 5 times when hurt)
+  // Now you can write: if (hp < 50%) heal()
+  // ============================================================
   {
     id: 'conditionals',
     name: 'Conditionals',
     category: 'conditionals',
-    description: 'Make decisions with if, else, and ternary operators.',
-    codeExample: `if (player.hp < 50) {\n  heal();\n} else {\n  attack();\n}`,
+    description: 'Make decisions - heal when hurt, execute when enemy is low!',
+    codeExample: `if (hp < 50) {\n  heal();\n} else if (enemy.hp < 30) {\n  execute();\n}`,
     unlocksAbilities: ['execute', 'desperate-strike', 'overcharge', 'ternary-strike'],
-    unlocksConditions: ['hp_below', 'hp_above', 'enemy_hp_below'],
+    unlocksFeatures: ['condition_hp_below', 'condition_hp_above', 'condition_enemy_hp_below', 'condition_mana_above', 'action_power_strike'],
+    unlocksConditions: ['hp_below', 'hp_above', 'enemy_hp_below', 'mana_above'],
     statBonus: { critChance: 0.05 },
     learned: false,
     xpToLearn: 150,
     currentXp: 0,
     prerequisites: ['variables'],
     learnByDoing: [
-      { id: 'use-heal-5', description: 'Use Heal when HP < 50%', type: 'use_ability', target: 5, current: 0, completed: false }
+      { id: 'heal-when-hurt', description: 'Use Heal when HP below 50% (5 times)', type: 'use_ability', target: 5, current: 0, completed: false }
     ]
   },
+
+  // ============================================================
+  // TIER 3: OPERATORS - Combine conditions! (win 30 fights with automation)
+  // Now you can write: if (hp < 50 && mana > 20) heal()
+  // ============================================================
   {
-    id: 'loops',
-    name: 'Loops',
-    category: 'loops',
-    description: 'Repeat actions with for, while, and do-while loops.',
-    codeExample: `for (let i = 0; i < 3; i++) {\n  attack();\n}`,
-    unlocksAbilities: ['double-tap', 'triple-strike', 'ramping-fury', 'for-loop'],
-    unlocksConditions: ['on_kill', 'on_crit'],
-    statBonus: { attackSpeed: 0.1 },
+    id: 'operators',
+    name: 'Operators',
+    category: 'conditionals',
+    description: 'Combine conditions with AND, OR, NOT for smarter scripts!',
+    codeExample: `if (hp < 50 && mana > 20) {\n  heal();\n} else if (enemy.hp < 30 || hp > 80) {\n  powerStrike();\n}`,
+    unlocksAbilities: [],
+    unlocksFeatures: ['operator_and', 'operator_or', 'operator_not', 'condition_ability_ready', 'action_defend'],
+    unlocksConditions: ['ability_ready'],
+    statBonus: { defense: 5 },
     learned: false,
     xpToLearn: 200,
     currentXp: 0,
     prerequisites: ['conditionals'],
     learnByDoing: [
+      { id: 'script-kills-30', description: 'Let scripts kill 30 enemies', type: 'trigger_script', target: 30, current: 0, completed: false }
+    ]
+  },
+
+  // ============================================================
+  // TIER 4: LOOPS - Multi-hit combos! (kill 50 enemies total)
+  // Now you can write: for (let i = 0; i < 3; i++) attack()
+  // ============================================================
+  {
+    id: 'loops',
+    name: 'Loops',
+    category: 'loops',
+    description: 'Repeat actions efficiently - combo attacks, farming loops!',
+    codeExample: `for (let i = 0; i < 3; i++) {\n  attack();\n  if (enemy.hp <= 0) break;\n}`,
+    unlocksAbilities: ['double-tap', 'triple-strike', 'ramping-fury', 'for-loop'],
+    unlocksFeatures: ['loop_for', 'loop_counter', 'loop_break', 'loop_continue', 'action_meditate'],
+    unlocksConditions: ['on_kill', 'on_crit'],
+    statBonus: { attackSpeed: 0.1 },
+    learned: false,
+    xpToLearn: 250,
+    currentXp: 0,
+    prerequisites: ['operators'],
+    learnByDoing: [
       { id: 'kill-50', description: 'Defeat 50 enemies total', type: 'kill_count', target: 50, current: 0, completed: false }
     ]
   },
+
+  // ============================================================
+  // TIER 5: FUNCTIONS - Reusable code! (reach Zone 2)
+  // Now you can write: function burst() { powerStrike(); execute(); }
+  // ============================================================
   {
     id: 'functions',
     name: 'Functions',
     category: 'functions',
-    description: 'Create reusable blocks of code.',
-    codeExample: `function calculateDamage(base, crit) {\n  return crit ? base * 2 : base;\n}`,
+    description: 'Create reusable code - define your own attack combos!',
+    codeExample: `function burst(enemy) {\n  if (enemy.hp < 30) return execute();\n  return powerStrike();\n}`,
     unlocksAbilities: ['percent-slash', 'finishing-blow', 'life-drain', 'console-log'],
+    unlocksFeatures: ['function_define', 'function_params', 'function_return', 'function_arrow', 'math_operations'],
     unlocksConditions: ['ability_ready'],
     statBonus: { maxMana: 20 },
     learned: false,
-    xpToLearn: 250,
+    xpToLearn: 300,
     currentXp: 0,
     prerequisites: ['loops'],
     learnByDoing: [
-      { id: 'trigger-script-20', description: 'Trigger automation scripts 20 times', type: 'trigger_script', target: 20, current: 0, completed: false }
+      { id: 'reach-zone-2', description: 'Reach Loop Caverns (Zone 2)', type: 'reach_zone', target: 1, current: 0, completed: false }
     ]
   },
+
+  // ============================================================
+  // TIER 6: ARRAYS - Handle groups! (reach Zone 3)
+  // Now you can write: enemies.forEach(e => attack(e))
+  // ============================================================
   {
     id: 'arrays-basics',
     name: 'Arrays',
     category: 'arrays',
-    description: 'Store multiple values in ordered lists.',
-    codeExample: `const enemies = ['bug', 'error', 'null'];\nconst first = enemies[0];`,
+    description: 'Work with collections - target multiple enemies efficiently!',
+    codeExample: `const enemies = getEnemies();\nenemies.forEach(e => {\n  if (e.hp < 30) execute(e);\n});`,
     unlocksAbilities: ['efficient-strike', 'mana-bomb', 'conservation'],
+    unlocksFeatures: ['array_length', 'array_foreach', 'array_includes', 'array_find'],
     unlocksConditions: [],
     statBonus: { attack: 10 },
     learned: false,
-    xpToLearn: 300,
+    xpToLearn: 400,
     currentXp: 0,
     prerequisites: ['functions'],
     learnByDoing: [
-      { id: 'reach-zone-3', description: 'Reach Array Mountains', type: 'reach_zone', target: 1, current: 0, completed: false }
+      { id: 'reach-zone-3', description: 'Reach Array Mountains (Zone 3)', type: 'reach_zone', target: 1, current: 0, completed: false }
     ]
   },
-  {
-    id: 'arrays-methods',
-    name: 'Array Methods',
-    category: 'arrays',
-    description: 'Transform arrays with map, filter, and reduce.',
-    codeExample: `const doubled = [1, 2, 3].map(x => x * 2);\nconst sum = [1, 2, 3].reduce((a, b) => a + b);`,
-    unlocksAbilities: ['map-attack', 'reduce-attack'],
-    unlocksConditions: [],
-    statBonus: { critDamage: 0.2 },
-    learned: false,
-    xpToLearn: 400,
-    currentXp: 0,
-    prerequisites: ['arrays-basics'],
-    learnByDoing: [
-      { id: 'defeat-reducer', description: 'Defeat The Reducer boss', type: 'defeat_boss', target: 1, current: 0, completed: false }
-    ]
-  },
+
+  // ============================================================
+  // TIER 7: OBJECTS - Data structures! (defeat forEach Dragon boss)
+  // Now you can write: const { hp, mana } = player
+  // ============================================================
   {
     id: 'objects',
     name: 'Objects',
     category: 'objects',
-    description: 'Group related data with key-value pairs.',
-    codeExample: `const player = {\n  name: "Hero",\n  hp: 100,\n  attack: 15\n};`,
+    description: 'Group related data - read enemy stats, manage buffs!',
+    codeExample: `const { hp, attack } = enemy;\nif (attack > 50) {\n  defend();\n}`,
     unlocksAbilities: ['focus', 'berserk', 'calculated-strike'],
+    unlocksFeatures: ['object_access', 'object_destructure', 'object_spread'],
     unlocksConditions: [],
     statBonus: { defense: 10 },
     learned: false,
-    xpToLearn: 350,
+    xpToLearn: 500,
     currentXp: 0,
     prerequisites: ['arrays-basics'],
     learnByDoing: [
-      { id: 'equip-5', description: 'Equip 5 different items', type: 'kill_count', target: 5, current: 0, completed: false }
+      { id: 'defeat-foreach', description: 'Defeat the forEach Dragon', type: 'defeat_boss', target: 1, current: 0, completed: false }
     ]
   },
+
+  // ============================================================
+  // TIER 8: ARRAY METHODS - Transform data! (defeat The Reducer boss)
+  // Now you can write: enemies.filter(e => e.hp < 50).map(e => attack(e))
+  // ============================================================
+  {
+    id: 'arrays-methods',
+    name: 'Array Methods',
+    category: 'arrays',
+    description: 'Transform data - filter weak enemies, map attacks!',
+    codeExample: `const weak = enemies.filter(e => e.hp < 50);\nconst damage = weak.map(e => attack(e))\n  .reduce((a, b) => a + b, 0);`,
+    unlocksAbilities: ['map-attack', 'reduce-attack'],
+    unlocksFeatures: ['array_filter', 'array_map', 'ternary_operator'],
+    unlocksConditions: [],
+    statBonus: { critDamage: 0.2 },
+    learned: false,
+    xpToLearn: 600,
+    currentXp: 0,
+    prerequisites: ['objects'],
+    learnByDoing: [
+      { id: 'defeat-reducer', description: 'Defeat The Reducer boss', type: 'defeat_boss', target: 1, current: 0, completed: false }
+    ]
+  },
+
+  // ============================================================
+  // TIER 9: ASYNC - Timing is everything! (reach Zone 4)
+  // Now you can write: await heal(); await attack();
+  // ============================================================
   {
     id: 'async-basics',
     name: 'Async/Await',
     category: 'async',
-    description: 'Handle asynchronous operations elegantly.',
-    codeExample: `async function fetchData() {\n  const response = await fetch(url);\n  return response.json();\n}`,
+    description: 'Handle timing - chain actions, wait for cooldowns!',
+    codeExample: `async function combo() {\n  await powerStrike();\n  await heal();\n  await execute();\n}`,
     unlocksAbilities: ['async-heal', 'promise-chain'],
+    unlocksFeatures: ['promise_then', 'async_await', 'setTimeout_setInterval'],
     unlocksConditions: [],
     statBonus: { attackSpeed: 0.15 },
     learned: false,
-    xpToLearn: 500,
+    xpToLearn: 700,
     currentXp: 0,
-    prerequisites: ['functions', 'arrays-methods'],
+    prerequisites: ['arrays-methods'],
     learnByDoing: [
-      { id: 'defeat-promise', description: 'Defeat Promise Titan', type: 'defeat_boss', target: 1, current: 0, completed: false }
+      { id: 'reach-zone-4', description: 'Reach Promise Peaks (Zone 4)', type: 'reach_zone', target: 1, current: 0, completed: false }
     ]
   },
+
+  // ============================================================
+  // TIER 10: REACT BASICS - Components! (defeat Promise Titan)
+  // Now you understand: props, events, composition
+  // ============================================================
   {
     id: 'react-basics',
     name: 'React Components',
     category: 'react',
-    description: 'Build UIs with reusable components.',
-    codeExample: `function Button({ onClick, children }) {\n  return <button onClick={onClick}>{children}</button>;\n}`,
+    description: 'Build reusable UI - understand props and events!',
+    codeExample: `function AttackButton({ onAttack }) {\n  return <button onClick={onAttack}>Attack!</button>;\n}`,
     unlocksAbilities: [],
+    unlocksFeatures: ['react_props', 'react_events'],
     unlocksConditions: [],
     statBonus: { maxHp: 50 },
     learned: false,
-    xpToLearn: 600,
+    xpToLearn: 800,
     currentXp: 0,
-    prerequisites: ['async-basics', 'objects'],
+    prerequisites: ['async-basics'],
     learnByDoing: [
-      { id: 'reach-react', description: 'Reach React Realm', type: 'reach_zone', target: 1, current: 0, completed: false }
+      { id: 'defeat-promise', description: 'Defeat Promise Titan', type: 'defeat_boss', target: 1, current: 0, completed: false }
     ]
   },
+
+  // ============================================================
+  // TIER 11: REACT HOOKS - State mastery! (reach React Realm)
+  // Now you can write: const [damage, setDamage] = useState(0)
+  // ============================================================
   {
     id: 'react-hooks',
     name: 'React Hooks',
     category: 'react',
-    description: 'Add state and effects to functional components.',
-    codeExample: `const [count, setCount] = useState(0);\nuseEffect(() => {\n  document.title = count;\n}, [count]);`,
+    description: 'Master state - useState for tracking, useEffect for reactions!',
+    codeExample: `const [combo, setCombo] = useState(0);\nuseEffect(() => {\n  if (combo > 10) setBerserk(true);\n}, [combo]);`,
     unlocksAbilities: ['use-effect', 'use-state'],
+    unlocksFeatures: ['react_useState', 'react_useEffect'],
     unlocksConditions: [],
     statBonus: { critChance: 0.1, critDamage: 0.3 },
     learned: false,
-    xpToLearn: 800,
+    xpToLearn: 1000,
     currentXp: 0,
     prerequisites: ['react-basics'],
     learnByDoing: [
-      { id: 'defeat-hydra', description: 'Defeat Hydration Hydra', type: 'defeat_boss', target: 1, current: 0, completed: false }
+      { id: 'reach-react', description: 'Reach React Realm (Zone 5)', type: 'reach_zone', target: 1, current: 0, completed: false }
     ]
   }
 ];

@@ -336,8 +336,9 @@ export interface JsConcept {
   description: string;
   codeExample: string;
 
-  // What it unlocks
+  // What it unlocks - abilities AND script features!
   unlocksAbilities: string[];
+  unlocksFeatures: ScriptFeature[];  // Script automation features
   unlocksConditions: ScriptCondition['type'][];
   statBonus: Partial<CombatStats>;
 
