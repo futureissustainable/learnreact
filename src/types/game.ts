@@ -92,6 +92,9 @@ export interface LootDrop {
 // ============ EQUIPMENT ============
 
 export type ScriptFeature =
+  // === TIER 0: THE FIRST UNLOCK - Automation Itself! ===
+  | 'loop_while_true'           // while(true) { } + attack() - First automation!
+
   // === TIER 1: Basic Conditions (if statements) ===
   | 'condition_hp_below'        // if (hp < X%)
   | 'condition_hp_above'        // if (hp > X%)
@@ -103,7 +106,7 @@ export type ScriptFeature =
   | 'action_heal'               // heal()
   | 'action_power_strike'       // powerStrike()
   | 'action_defend'             // defend() - reduce damage taken
-  | 'action_mana_regen'         // meditiate() - restore mana
+  | 'action_meditate'           // meditate() - restore mana
 
   // === TIER 3: Logical Operators ===
   | 'operator_and'              // && - combine conditions

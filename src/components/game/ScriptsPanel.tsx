@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { ToggleLeft, ToggleRight, Code, Lightning, Plus, Trash, X, Lock } from '@phosphor-icons/react';
+import { ToggleLeft, ToggleRight, Code, Lightning, Plus, Trash, X, Lock, ShoppingCart } from '@phosphor-icons/react';
 import { ScriptCondition, ScriptAction, ScriptFeature } from '@/types/game';
 
 interface ScriptsPanelProps {
@@ -10,54 +10,44 @@ interface ScriptsPanelProps {
 }
 
 // Conditions with their unlock requirements
-// Organized by learning progression
+// CRITICAL: while(true) requires loop_while_true - the first unlock!
 const CONDITIONS: {
   id: ScriptCondition['type'];
   label: string;
   description: string;
   requires?: ScriptFeature;
   needsPercent?: boolean;
-  category: 'basic' | 'intermediate' | 'advanced';
 }[] = [
-  // === BASIC: Always available or early unlocks ===
-  { id: 'always', label: 'while (true)', description: 'Runs continuously - your first loop!', category: 'basic' },
-  { id: 'hp_below', label: 'if (hp < X%)', description: 'When your health is low', requires: 'condition_hp_below', needsPercent: true, category: 'basic' },
-  { id: 'hp_above', label: 'if (hp > X%)', description: 'When your health is high', requires: 'condition_hp_above', needsPercent: true, category: 'basic' },
-  { id: 'mana_above', label: 'if (mana > X%)', description: 'When you have enough mana', requires: 'condition_mana_above', needsPercent: true, category: 'basic' },
-  { id: 'mana_below', label: 'if (mana < X%)', description: 'When mana is running low', requires: 'condition_mana_above', needsPercent: true, category: 'basic' },
-  { id: 'enemy_hp_below', label: 'if (enemy.hp < X%)', description: 'Execute when enemy is weak!', requires: 'condition_enemy_hp_below', needsPercent: true, category: 'basic' },
-  { id: 'enemy_hp_above', label: 'if (enemy.hp > X%)', description: 'When enemy is still strong', requires: 'condition_enemy_hp_below', needsPercent: true, category: 'basic' },
-  { id: 'ability_ready', label: 'if (ability.ready)', description: 'When ability is off cooldown', requires: 'condition_ability_ready', category: 'basic' },
+  // The first unlock - requires buying Automation Core!
+  { id: 'always', label: 'while (true)', description: 'Runs continuously - your first loop!', requires: 'loop_while_true' },
 
-  // === INTERMEDIATE: Event-based triggers ===
-  { id: 'on_kill', label: 'onKill()', description: 'Triggers when you kill an enemy', requires: 'loop_for', category: 'intermediate' },
-  { id: 'on_crit', label: 'onCrit()', description: 'Triggers on critical hit', requires: 'loop_for', category: 'intermediate' },
-  { id: 'on_hit', label: 'onHit()', description: 'Triggers when you hit enemy', requires: 'loop_for', category: 'intermediate' },
-
-  // === ADVANCED: Complex conditions (future expansion) ===
-  { id: 'never', label: 'if (false)', description: 'Never runs - useful for disabling', requires: 'operator_not', category: 'advanced' },
+  // Tier 1: Basic conditions
+  { id: 'hp_below', label: 'if (hp < X%)', description: 'When your health is low', requires: 'condition_hp_below', needsPercent: true },
+  { id: 'hp_above', label: 'if (hp > X%)', description: 'When your health is high', requires: 'condition_hp_below', needsPercent: true },
+  { id: 'mana_above', label: 'if (mana > X%)', description: 'When you have enough mana', requires: 'condition_mana_above', needsPercent: true },
+  { id: 'mana_below', label: 'if (mana < X%)', description: 'When mana is running low', requires: 'condition_mana_above', needsPercent: true },
+  { id: 'enemy_hp_below', label: 'if (enemy.hp < X%)', description: 'Execute when enemy is weak!', requires: 'condition_enemy_hp_below', needsPercent: true },
+  { id: 'enemy_hp_above', label: 'if (enemy.hp > X%)', description: 'When enemy is still strong', requires: 'condition_enemy_hp_below', needsPercent: true },
+  { id: 'ability_ready', label: 'if (ability.ready)', description: 'When ability is off cooldown', requires: 'condition_ability_ready' },
 ];
 
 // Actions with their unlock requirements
-// Organized by combat role
+// CRITICAL: attack() requires loop_while_true - bundled with first unlock!
 const ACTIONS: {
   id: string;
   label: string;
   description: string;
   requires?: ScriptFeature;
-  category: 'damage' | 'defense' | 'utility';
   manaCost?: number;
 }[] = [
-  // === DAMAGE: Ways to hurt enemies ===
-  { id: 'attack', label: 'attack()', description: 'Basic attack - always available', category: 'damage', manaCost: 0 },
-  { id: 'power-strike', label: 'powerStrike()', description: 'Strong attack (10 mana)', requires: 'action_power_strike', category: 'damage', manaCost: 10 },
+  // First unlock - comes with Automation Core
+  { id: 'attack', label: 'attack()', description: 'Basic attack (0 mana)', requires: 'loop_while_true', manaCost: 0 },
 
-  // === DEFENSE: Ways to stay alive ===
-  { id: 'heal', label: 'heal()', description: 'Restore 30% HP (20 mana)', requires: 'action_heal', category: 'defense', manaCost: 20 },
-  { id: 'defend', label: 'defend()', description: 'Block 50% damage next hit (5 mana)', requires: 'action_defend', category: 'defense', manaCost: 5 },
-
-  // === UTILITY: Resource management ===
-  { id: 'meditate', label: 'meditate()', description: 'Restore 20% mana (skips attack)', requires: 'action_mana_regen', category: 'utility', manaCost: 0 },
+  // Tier 1-2: Additional actions
+  { id: 'heal', label: 'heal()', description: 'Restore 30% HP (20 mana)', requires: 'action_heal', manaCost: 20 },
+  { id: 'power-strike', label: 'powerStrike()', description: 'Heavy attack (10 mana)', requires: 'action_power_strike', manaCost: 10 },
+  { id: 'defend', label: 'defend()', description: 'Block 50% damage (5 mana)', requires: 'action_defend', manaCost: 5 },
+  { id: 'meditate', label: 'meditate()', description: 'Restore 20% mana (0 mana)', requires: 'action_meditate', manaCost: 0 },
 ];
 
 function generateCode(condition: ScriptCondition, action: ScriptAction): string {
@@ -78,6 +68,9 @@ function generateCode(condition: ScriptCondition, action: ScriptAction): string 
     case 'mana_above':
       conditionStr = `player.mana > player.maxMana * ${(condition as { percent: number }).percent / 100}`;
       break;
+    case 'mana_below':
+      conditionStr = `player.mana < player.maxMana * ${(condition as { percent: number }).percent / 100}`;
+      break;
     case 'ability_ready':
       conditionStr = `abilities['${(condition as { abilityId: string }).abilityId}'].ready`;
       break;
@@ -88,7 +81,9 @@ function generateCode(condition: ScriptCondition, action: ScriptAction): string 
   const abilityId = action.type === 'use_ability' ? action.abilityId : 'attack';
   const actionName = abilityId === 'attack' ? 'attack' :
                      abilityId === 'heal' ? 'heal' :
-                     abilityId === 'power-strike' ? 'powerStrike' : abilityId;
+                     abilityId === 'power-strike' ? 'powerStrike' :
+                     abilityId === 'defend' ? 'defend' :
+                     abilityId === 'meditate' ? 'meditate' : abilityId;
 
   return `while (${conditionStr}) {\n  ${actionName}();\n}`;
 }
@@ -100,7 +95,7 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
   const addScript = useGameStore(s => s.addScript);
   const deleteScript = useGameStore(s => s.deleteScript);
 
-  const [showCreate, setShowCreate] = useState(hero.scripts.length === 0); // Auto-open if no scripts
+  const [showCreate, setShowCreate] = useState(false);
   const [selectedCondition, setSelectedCondition] = useState<ScriptCondition['type']>('always');
   const [selectedAction, setSelectedAction] = useState<string>('attack');
   const [conditionPercent, setConditionPercent] = useState(50);
@@ -124,9 +119,10 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
   };
 
   const unlockedFeatures = getUnlockedFeatures();
+  const hasAutomation = unlockedFeatures.has('loop_while_true');
 
   const isFeatureUnlocked = (feature?: ScriptFeature) => {
-    if (!feature) return true; // No requirement = always available
+    if (!feature) return true;
     return unlockedFeatures.has(feature);
   };
 
@@ -167,12 +163,65 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
   const availableActions = ACTIONS.filter(a => isFeatureUnlocked(a.requires));
   const lockedActions = ACTIONS.filter(a => !isFeatureUnlocked(a.requires));
 
+  // ========================================================
+  // NO AUTOMATION YET - Show "Buy Automation Core" message
+  // ========================================================
+  if (!hasAutomation) {
+    return (
+      <div className={`bg-[#1e1e2e] rounded-xl p-4 border border-[#313244] ${fullWidth ? 'max-w-2xl mx-auto' : ''}`}>
+        <div className="flex items-center gap-2 mb-4">
+          <Code size={16} className="text-[#6c7086]" />
+          <h3 className="font-semibold text-[#6c7086]">Scripts</h3>
+          <Lock size={14} className="text-[#f9e2af]" />
+        </div>
+
+        <div className="text-center py-8">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#181825] flex items-center justify-center border-2 border-dashed border-[#6c7086]">
+            <span className="text-3xl">⚙️</span>
+          </div>
+
+          <h4 className="text-[#f9e2af] font-medium mb-2">Automation Locked</h4>
+          <p className="text-sm text-[#6c7086] mb-4">
+            You must click <span className="text-[#a6e3a1]">Attack</span> manually for now.
+          </p>
+
+          <div className="bg-[#181825] rounded-lg p-4 border border-[#cba6f7]/30 mb-4">
+            <p className="text-xs text-[#cba6f7] mb-2">To unlock automation:</p>
+            <p className="text-sm text-[#cdd6f4]">
+              Buy <span className="text-[#f9e2af] font-medium">Automation Core</span> from the Shop
+            </p>
+            <p className="text-xs text-[#6c7086] mt-2">
+              Cost: ~50 gold (kill ~10 enemies manually)
+            </p>
+          </div>
+
+          <div className="flex items-center justify-center gap-2 text-xs text-[#6c7086]">
+            <ShoppingCart size={14} />
+            <span>Go to Shop tab</span>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-[#313244]">
+          <p className="text-xs text-[#6c7086] text-center">
+            💡 This is how real programming works - you start manual, then automate!
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ========================================================
+  // HAS AUTOMATION - Show full Scripts panel
+  // ========================================================
   return (
     <div className={`bg-[#1e1e2e] rounded-xl p-4 border border-[#313244] ${fullWidth ? 'max-w-2xl mx-auto' : ''}`}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Code size={16} className="text-[#cba6f7]" />
           <h3 className="font-semibold text-[#cdd6f4]">Scripts</h3>
+          <span className="text-xs px-2 py-0.5 bg-[#a6e3a1]/20 text-[#a6e3a1] rounded">
+            {availableConditions.length} conditions • {availableActions.length} actions
+          </span>
         </div>
         {!showCreate && (
           <button
@@ -192,16 +241,14 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
             <h4 className="font-medium text-[#cdd6f4]">
               {hero.scripts.length === 0 ? '✨ Write Your First Script!' : 'Create Script'}
             </h4>
-            {hero.scripts.length > 0 && (
-              <button onClick={() => setShowCreate(false)} className="text-[#6c7086] hover:text-[#cdd6f4]">
-                <X size={16} />
-              </button>
-            )}
+            <button onClick={() => setShowCreate(false)} className="text-[#6c7086] hover:text-[#cdd6f4]">
+              <X size={16} />
+            </button>
           </div>
 
           {hero.scripts.length === 0 && (
             <p className="text-xs text-[#a6e3a1] mb-3 p-2 bg-[#a6e3a1]/10 rounded">
-              Scripts automate your combat! Start with <code className="text-[#f9e2af]">while(true)</code> + <code className="text-[#f9e2af]">attack()</code>
+              🎉 You unlocked automation! Start with <code className="text-[#f9e2af]">while(true)</code> + <code className="text-[#f9e2af]">attack()</code>
             </p>
           )}
 
@@ -262,7 +309,7 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
             >
               {availableActions.map(action => (
                 <option key={action.id} value={action.id}>
-                  {action.label}
+                  {action.label} {action.manaCost ? `(${action.manaCost} mana)` : ''}
                 </option>
               ))}
             </select>
@@ -300,16 +347,21 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
                 <Lock size={12} /> Buy items in Shop to unlock:
               </p>
               <div className="flex flex-wrap gap-1">
-                {lockedConditions.slice(0, 3).map(c => (
+                {lockedConditions.slice(0, 4).map(c => (
                   <span key={c.id} className="text-[10px] px-2 py-0.5 bg-[#313244] text-[#6c7086] rounded">
                     {c.label}
                   </span>
                 ))}
-                {lockedActions.map(a => (
+                {lockedActions.slice(0, 3).map(a => (
                   <span key={a.id} className="text-[10px] px-2 py-0.5 bg-[#313244] text-[#6c7086] rounded">
                     {a.label}
                   </span>
                 ))}
+                {(lockedConditions.length + lockedActions.length) > 7 && (
+                  <span className="text-[10px] px-2 py-0.5 text-[#6c7086]">
+                    +{lockedConditions.length + lockedActions.length - 7} more
+                  </span>
+                )}
               </div>
             </div>
           )}
@@ -359,13 +411,16 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
         ))}
       </div>
 
-      {/* First time guide */}
+      {/* Prompt to create first script */}
       {hero.scripts.length === 0 && !showCreate && (
         <div className="text-center py-6">
-          <p className="text-[#f9e2af] text-sm mb-2">No scripts yet!</p>
-          <p className="text-xs text-[#6c7086]">
-            Create your first <code className="text-[#a6e3a1]">while(true)</code> loop above
-          </p>
+          <p className="text-[#f9e2af] text-sm mb-2">You have automation unlocked!</p>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="text-sm text-[#cba6f7] hover:underline"
+          >
+            Click here to create your first script
+          </button>
         </div>
       )}
 
@@ -374,7 +429,7 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
         <div className="mt-4 p-3 bg-[#181825] rounded-lg border border-[#313244]">
           <p className="text-xs text-[#6c7086]">
             <Lightning size={12} className="inline text-[#f9e2af] mr-1" />
-            Buy items in the <span className="text-[#cba6f7]">Shop</span> to unlock more conditions & actions!
+            Buy more items in <span className="text-[#cba6f7]">Shop</span> to unlock {lockedConditions.length + lockedActions.length} more conditions & actions!
           </p>
         </div>
       )}

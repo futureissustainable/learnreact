@@ -1202,10 +1202,10 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'codequest-rpg-storage',
-      version: 8,
+      version: 9,
       migrate: (persistedState: unknown, version: number) => {
-        // Force fresh state - rebalanced economy with exponential gold scaling
-        if (version < 8) {
+        // Force fresh - new progression: manual start, buy Automation Core first
+        if (version < 9) {
           return getInitialState();
         }
         return persistedState as GameState;
