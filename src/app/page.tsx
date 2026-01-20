@@ -54,7 +54,7 @@ export default function Home() {
 
   const handleOnboardingComplete = (heroName: string) => {
     initializeGame(heroName);
-    startAutoBattle();
+    // Don't auto-start - player must write their first script and press play
   };
 
   if (!mounted) {

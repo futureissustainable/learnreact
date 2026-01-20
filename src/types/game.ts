@@ -91,6 +91,82 @@ export interface LootDrop {
 
 // ============ EQUIPMENT ============
 
+export type ScriptFeature =
+  // === TIER 0: THE FIRST UNLOCK - Automation Itself! ===
+  | 'loop_while_true'           // while(true) { } + attack() - First automation!
+
+  // === TIER 1: Basic Conditions (if statements) ===
+  | 'condition_hp_below'        // if (hp < X%)
+  | 'condition_hp_above'        // if (hp > X%)
+  | 'condition_enemy_hp_below'  // if (enemy.hp < X%)
+  | 'condition_mana_above'      // if (mana > X%)
+  | 'condition_ability_ready'   // if (ability.ready)
+
+  // === TIER 2: Actions (function calls) ===
+  | 'action_heal'               // heal()
+  | 'action_power_strike'       // powerStrike()
+  | 'action_defend'             // defend() - reduce damage taken
+  | 'action_meditate'           // meditate() - restore mana
+
+  // === TIER 3: Logical Operators ===
+  | 'operator_and'              // && - combine conditions
+  | 'operator_or'               // || - alternative conditions
+  | 'operator_not'              // ! - negate conditions
+
+  // === TIER 4: Comparison Operators ===
+  | 'comparison_equals'         // === strict equality
+  | 'comparison_not_equals'     // !== strict inequality
+  | 'comparison_greater_equal'  // >= greater or equal
+  | 'comparison_less_equal'     // <= less or equal
+
+  // === TIER 5: Variables & Math ===
+  | 'variables_let'             // let - mutable variables
+  | 'variables_const'           // const - immutable variables
+  | 'math_operations'           // +, -, *, /, % in conditions
+  | 'math_random'               // Math.random() for chance-based
+
+  // === TIER 6: Loops ===
+  | 'loop_for'                  // for (let i = 0; i < n; i++)
+  | 'loop_counter'              // Access to loop counter variable
+  | 'loop_break'                // break - exit loop early
+  | 'loop_continue'             // continue - skip iteration
+
+  // === TIER 7: Arrays ===
+  | 'array_length'              // .length property
+  | 'array_foreach'             // .forEach() method
+  | 'array_map'                 // .map() method
+  | 'array_filter'              // .filter() method
+  | 'array_find'                // .find() method
+  | 'array_includes'            // .includes() method
+
+  // === TIER 8: Functions ===
+  | 'function_define'           // Define custom functions
+  | 'function_params'           // Function parameters
+  | 'function_return'           // Return values
+  | 'function_arrow'            // Arrow function syntax () => {}
+
+  // === TIER 9: Objects ===
+  | 'object_access'             // object.property or object['key']
+  | 'object_destructure'        // const { hp, mana } = player
+  | 'object_spread'             // ...spread operator
+
+  // === TIER 10: Advanced ===
+  | 'ternary_operator'          // condition ? a : b
+  | 'switch_statement'          // switch/case
+  | 'try_catch'                 // try/catch error handling
+  | 'template_literals'         // `Hello ${name}`
+
+  // === TIER 11: Async (Endgame) ===
+  | 'promise_then'              // .then() chaining
+  | 'async_await'               // async/await syntax
+  | 'setTimeout_setInterval'    // Timers
+
+  // === TIER 12: React (Final) ===
+  | 'react_useState'            // useState hook
+  | 'react_useEffect'           // useEffect hook
+  | 'react_props'               // Component props
+  | 'react_events';             // Event handlers onClick, etc.
+
 export interface Equipment {
   id: string;
   name: string;
@@ -100,6 +176,9 @@ export interface Equipment {
   stats: Partial<CombatStats>;
   description: string;
   emoji: string;
+  // What script features this item unlocks
+  unlocks?: ScriptFeature;
+  unlocksDescription?: string;
 }
 
 // ============ ABILITIES ============
@@ -118,13 +197,63 @@ export interface Ability {
 }
 
 export type AbilityEffect =
+  // Basic effects
   | { type: 'damage'; value: number; scaling: number }
   | { type: 'heal'; value: number; scaling: number }
   | { type: 'buff'; stat: keyof CombatStats; value: number; duration: number }
   | { type: 'dot'; damage: number; ticks: number; interval: number }
-  | { type: 'aoe'; damage: number; hitAll: boolean }
-  | { type: 'execute'; threshold: number; bonusDamage: number }
-  | { type: 'lifesteal_burst'; damage: number; healPercent: number };
+  | { type: 'aoe'; damage: number; scaling: number; hitAll: boolean }
+
+  // Conditional damage (coding concepts!)
+  | { type: 'execute'; threshold: number; bonusDamage: number }           // if (enemy.hp < threshold)
+  | { type: 'desperation'; baseScaling: number }                           // damage scales with YOUR missing HP
+  | { type: 'conditional_damage'; condition: 'mana_above' | 'hp_above'; threshold: number; lowScaling: number; highScaling: number }
+
+  // Percent-based damage (math concepts!)
+  | { type: 'percent_max_hp'; percent: number }                            // % of enemy MAX HP
+  | { type: 'percent_missing_hp'; percent: number }                        // % of enemy MISSING HP
+
+  // Lifesteal variants
+  | { type: 'lifesteal_burst'; scaling: number; healPercent: number }
+
+  // Multi-hit (loops!)
+  | { type: 'multi_hit'; hits: number; scaling: number }                   // for (let i = 0; i < hits; i++)
+
+  // Ramping damage (teaches state/accumulation)
+  | { type: 'ramping'; baseScaling: number; rampPerUse: number }           // Each use adds damage
+
+  // Conditional cost (optimization)
+  | { type: 'conditional_cost'; scaling: number; condition: 'hp_above'; threshold: number; discount: number }
+
+  // Mana manipulation
+  | { type: 'mana_consume'; damagePerMana: number }                        // Consume ALL mana, damage = mana * X
+
+  // Stat reflection
+  | { type: 'reflect_stat'; stat: 'attack'; multiplier: number }           // damage = enemy.attack * X
+
+  // Crit manipulation
+  | { type: 'guaranteed_crit'; scaling: number }                           // Always crits
+
+  // Ternary operator!
+  | { type: 'ternary'; condition: 'hp_above'; threshold: number; trueScaling: number; falseScaling: number }
+
+  // Heal over time
+  | { type: 'hot'; healPercent: number; ticks: number; interval: number }  // HoT (heal over time)
+
+  // Resource management
+  | { type: 'refund_on_kill'; scaling: number; refundPercent: number }     // if (kills) refund mana
+
+  // Berserk (buff + debuff)
+  | { type: 'berserk'; attackSpeedBonus: number; defenseReduction: number; duration: number }
+
+  // Advanced array methods
+  | { type: 'reduce_damage'; multiplier: number }                          // damage = sum of all damage this fight * X
+
+  // Async concepts
+  | { type: 'promise_chain'; actions: string[] }                           // Sequential actions
+
+  // React concepts
+  | { type: 'stored_damage'; baseDamage: number; canStack: boolean };      // useState pattern
 
 // ============ AUTOMATION SCRIPTS ============
 
@@ -299,6 +428,15 @@ export function calculateXpForLevel(level: number): number {
 
 export function calculateMobStats(template: MobTemplate, zoneLevel: number): Omit<Mob, 'instanceId' | 'attackCooldown'> {
   const levelMod = Math.pow(1.12, zoneLevel - 1);
+
+  // Gold scales EXPONENTIALLY to match item price progression
+  // Zone 1 (lvl 1): ~10g per kill → Tier 1 items (40-60g) in 4-6 kills
+  // Zone 2 (lvl 5): ~30g per kill → Tier 2 items (90-150g) in 3-5 kills
+  // Zone 3 (lvl 10): ~150g per kill → Tier 5-6 items (400-1000g) in 3-7 kills
+  // Zone 4 (lvl 15): ~700g per kill → Tier 8-9 items (2k-5k) in 3-7 kills
+  // Zone 5 (lvl 20): ~3500g per kill → Tier 10-12 items (5k-15k) in 2-5 kills
+  const goldScaling = Math.pow(1.35, zoneLevel - 1); // ~1.35x per level = matches item prices
+
   return {
     id: template.id,
     name: template.name,
@@ -311,7 +449,7 @@ export function calculateMobStats(template: MobTemplate, zoneLevel: number): Omi
     defense: Math.floor(template.baseDefense * levelMod),
     attackSpeed: template.attackSpeed,
     xpReward: Math.floor(10 * zoneLevel * template.xpMultiplier),
-    goldReward: Math.floor(5 * zoneLevel * template.goldMultiplier),
+    goldReward: Math.floor(8 * goldScaling * template.goldMultiplier),
     lootTable: template.lootTable,
     isBoss: template.isBoss
   };
