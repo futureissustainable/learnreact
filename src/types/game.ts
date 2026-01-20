@@ -197,13 +197,63 @@ export interface Ability {
 }
 
 export type AbilityEffect =
+  // Basic effects
   | { type: 'damage'; value: number; scaling: number }
   | { type: 'heal'; value: number; scaling: number }
   | { type: 'buff'; stat: keyof CombatStats; value: number; duration: number }
   | { type: 'dot'; damage: number; ticks: number; interval: number }
-  | { type: 'aoe'; damage: number; hitAll: boolean }
-  | { type: 'execute'; threshold: number; bonusDamage: number }
-  | { type: 'lifesteal_burst'; damage: number; healPercent: number };
+  | { type: 'aoe'; damage: number; scaling: number; hitAll: boolean }
+
+  // Conditional damage (coding concepts!)
+  | { type: 'execute'; threshold: number; bonusDamage: number }           // if (enemy.hp < threshold)
+  | { type: 'desperation'; baseScaling: number }                           // damage scales with YOUR missing HP
+  | { type: 'conditional_damage'; condition: 'mana_above' | 'hp_above'; threshold: number; lowScaling: number; highScaling: number }
+
+  // Percent-based damage (math concepts!)
+  | { type: 'percent_max_hp'; percent: number }                            // % of enemy MAX HP
+  | { type: 'percent_missing_hp'; percent: number }                        // % of enemy MISSING HP
+
+  // Lifesteal variants
+  | { type: 'lifesteal_burst'; scaling: number; healPercent: number }
+
+  // Multi-hit (loops!)
+  | { type: 'multi_hit'; hits: number; scaling: number }                   // for (let i = 0; i < hits; i++)
+
+  // Ramping damage (teaches state/accumulation)
+  | { type: 'ramping'; baseScaling: number; rampPerUse: number }           // Each use adds damage
+
+  // Conditional cost (optimization)
+  | { type: 'conditional_cost'; scaling: number; condition: 'hp_above'; threshold: number; discount: number }
+
+  // Mana manipulation
+  | { type: 'mana_consume'; damagePerMana: number }                        // Consume ALL mana, damage = mana * X
+
+  // Stat reflection
+  | { type: 'reflect_stat'; stat: 'attack'; multiplier: number }           // damage = enemy.attack * X
+
+  // Crit manipulation
+  | { type: 'guaranteed_crit'; scaling: number }                           // Always crits
+
+  // Ternary operator!
+  | { type: 'ternary'; condition: 'hp_above'; threshold: number; trueScaling: number; falseScaling: number }
+
+  // Heal over time
+  | { type: 'hot'; healPercent: number; ticks: number; interval: number }  // HoT (heal over time)
+
+  // Resource management
+  | { type: 'refund_on_kill'; scaling: number; refundPercent: number }     // if (kills) refund mana
+
+  // Berserk (buff + debuff)
+  | { type: 'berserk'; attackSpeedBonus: number; defenseReduction: number; duration: number }
+
+  // Advanced array methods
+  | { type: 'reduce_damage'; multiplier: number }                          // damage = sum of all damage this fight * X
+
+  // Async concepts
+  | { type: 'promise_chain'; actions: string[] }                           // Sequential actions
+
+  // React concepts
+  | { type: 'stored_damage'; baseDamage: number; canStack: boolean };      // useState pattern
 
 // ============ AUTOMATION SCRIPTS ============
 

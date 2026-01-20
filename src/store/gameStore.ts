@@ -448,119 +448,214 @@ export const useGameStore = create<GameStore>()(
           return;
         }
 
-        if (effect.type === 'damage') {
-          const baseDamage = effect.value + state.hero.stats.attack * effect.scaling;
-          if (state.currentMobs.length > 0) {
-            const target = state.currentMobs[0];
-            const newHp = target.hp - baseDamage;
+        // Helper to apply damage to target
+        const applyDamage = (damage: number, target: Mob, message: string, color: string) => {
+          const newHp = target.hp - damage;
+          get().addLogEntry({ type: 'ability', message, value: damage, color });
+          set(s => ({ totalDamageDealt: s.totalDamageDealt + damage, highestHit: Math.max(s.highestHit, damage) }));
 
-            get().addLogEntry({
-              type: 'ability',
-              message: `${ability.emoji} ${ability.name} dealt ${Math.floor(baseDamage)} damage!`,
-              value: baseDamage,
-              color: '#A855F7'
-            });
-
-            if (newHp <= 0) {
-              get().killMob(target.instanceId);
-            } else {
-              set(s => ({
-                currentMobs: s.currentMobs.map(m =>
-                  m.instanceId === target.instanceId ? { ...m, hp: newHp } : m
-                )
-              }));
-            }
+          if (newHp <= 0) {
+            get().killMob(target.instanceId);
+          } else {
+            set(s => ({
+              currentMobs: s.currentMobs.map(m =>
+                m.instanceId === target.instanceId ? { ...m, hp: newHp } : m
+              )
+            }));
           }
-        } else if (effect.type === 'heal') {
-          const healAmount = effect.value + state.hero.stats.maxHp * effect.scaling;
+        };
+
+        const target = state.currentMobs[0];
+        const hero = state.hero;
+
+        // === BASIC DAMAGE ===
+        if (effect.type === 'damage') {
+          const damage = effect.value + hero.stats.attack * effect.scaling;
+          if (target) {
+            applyDamage(damage, target, `${ability.emoji} ${ability.name} dealt ${Math.floor(damage)} damage!`, '#A855F7');
+          }
+        }
+
+        // === HEAL ===
+        else if (effect.type === 'heal') {
+          const healAmount = effect.value + hero.stats.maxHp * effect.scaling;
+          set(s => ({
+            hero: { ...s.hero, stats: { ...s.hero.stats, hp: Math.min(s.hero.stats.maxHp, s.hero.stats.hp + healAmount) } }
+          }));
+          get().addLogEntry({ type: 'heal', message: `${ability.emoji} Healed ${Math.floor(healAmount)} HP!`, value: healAmount, color: '#22C55E' });
+        }
+
+        // === BUFF ===
+        else if (effect.type === 'buff') {
           set(s => ({
             hero: {
               ...s.hero,
-              stats: {
-                ...s.hero.stats,
-                hp: Math.min(s.hero.stats.maxHp, s.hero.stats.hp + healAmount)
-              }
+              activeBuffs: [...s.hero.activeBuffs, {
+                id: `${abilityId}-${Date.now()}`,
+                stat: effect.stat,
+                value: effect.value,
+                remainingDuration: effect.duration,
+                maxDuration: effect.duration
+              }]
             }
           }));
+          get().addLogEntry({ type: 'buff', message: `${ability.emoji} ${ability.name} activated!`, color: '#6366F1' });
+        }
 
-          get().addLogEntry({
-            type: 'heal',
-            message: `${ability.emoji} ${ability.name} healed ${Math.floor(healAmount)} HP!`,
-            value: healAmount,
-            color: '#22C55E'
-          });
-        } else if (effect.type === 'buff') {
-          set(s => ({
-            hero: {
-              ...s.hero,
-              activeBuffs: [
-                ...s.hero.activeBuffs,
-                {
-                  id: `${abilityId}-${Date.now()}`,
-                  stat: effect.stat,
-                  value: effect.value,
-                  remainingDuration: effect.duration,
-                  maxDuration: effect.duration
-                }
-              ]
+        // === EXECUTE (bonus damage when enemy HP low) ===
+        else if (effect.type === 'execute') {
+          if (target) {
+            const hpPercent = target.hp / target.maxHp;
+            const damage = hpPercent < effect.threshold ? hero.stats.attack * effect.bonusDamage : hero.stats.attack;
+            const msg = hpPercent < effect.threshold ? `${ability.emoji} EXECUTE! ${Math.floor(damage)} damage!` : `${ability.emoji} ${Math.floor(damage)} damage`;
+            applyDamage(damage, target, msg, '#DC2626');
+          }
+        }
+
+        // === DESPERATION (more damage when YOUR HP is low) ===
+        else if (effect.type === 'desperation') {
+          if (target) {
+            const missingHpPercent = 1 - (hero.stats.hp / hero.stats.maxHp);
+            const scaling = effect.baseScaling + missingHpPercent;
+            const damage = hero.stats.attack * scaling;
+            applyDamage(damage, target, `${ability.emoji} Desperate Strike! ${Math.floor(damage)} (${Math.floor(scaling * 100)}%)`, '#F97316');
+          }
+        }
+
+        // === CONDITIONAL DAMAGE (bonus if condition met) ===
+        else if (effect.type === 'conditional_damage') {
+          if (target) {
+            let conditionMet = false;
+            if (effect.condition === 'mana_above') {
+              conditionMet = (hero.stats.mana / hero.stats.maxMana) > effect.threshold;
+            } else if (effect.condition === 'hp_above') {
+              conditionMet = (hero.stats.hp / hero.stats.maxHp) > effect.threshold;
             }
-          }));
+            const scaling = conditionMet ? effect.highScaling : effect.lowScaling;
+            const damage = hero.stats.attack * scaling;
+            applyDamage(damage, target, `${ability.emoji} ${conditionMet ? 'OVERCHARGED!' : ''} ${Math.floor(damage)} damage!`, conditionMet ? '#FBBF24' : '#A855F7');
+          }
+        }
 
-          get().addLogEntry({
-            type: 'buff',
-            message: `${ability.emoji} ${ability.name} activated!`,
-            color: '#6366F1'
-          });
-        } else if (effect.type === 'aoe' && effect.hitAll) {
+        // === PERCENT MAX HP (% of enemy max HP) ===
+        else if (effect.type === 'percent_max_hp') {
+          if (target) {
+            const damage = target.maxHp * effect.percent;
+            applyDamage(damage, target, `${ability.emoji} ${Math.floor(damage)} (${Math.floor(effect.percent * 100)}% max HP)!`, '#3B82F6');
+          }
+        }
+
+        // === PERCENT MISSING HP (% of enemy missing HP) ===
+        else if (effect.type === 'percent_missing_hp') {
+          if (target) {
+            const missingHp = target.maxHp - target.hp;
+            const damage = missingHp * effect.percent;
+            applyDamage(damage, target, `${ability.emoji} ${Math.floor(damage)} (${Math.floor(effect.percent * 100)}% missing HP)!`, '#8B5CF6');
+          }
+        }
+
+        // === LIFESTEAL BURST (damage + heal) ===
+        else if (effect.type === 'lifesteal_burst') {
+          if (target) {
+            const damage = hero.stats.attack * effect.scaling;
+            const healAmount = damage * effect.healPercent;
+            applyDamage(damage, target, `${ability.emoji} ${Math.floor(damage)} damage, healed ${Math.floor(healAmount)}!`, '#22C55E');
+            set(s => ({
+              hero: { ...s.hero, stats: { ...s.hero.stats, hp: Math.min(s.hero.stats.maxHp, s.hero.stats.hp + healAmount) } }
+            }));
+          }
+        }
+
+        // === MULTI HIT ===
+        else if (effect.type === 'multi_hit') {
+          if (target) {
+            const damagePerHit = hero.stats.attack * effect.scaling;
+            const totalDamage = damagePerHit * effect.hits;
+            applyDamage(totalDamage, target, `${ability.emoji} ${effect.hits}x hits for ${Math.floor(totalDamage)} total!`, '#F472B6');
+          }
+        }
+
+        // === AOE (hit all enemies) ===
+        else if (effect.type === 'aoe' && effect.hitAll) {
           const mobs = state.currentMobs;
+          const damage = effect.damage || hero.stats.attack * (effect.scaling || 1);
           const updatedMobs: Mob[] = [];
           const killedMobs: string[] = [];
 
           mobs.forEach(mob => {
-            const newHp = mob.hp - effect.damage;
-            if (newHp <= 0) {
-              killedMobs.push(mob.instanceId);
-            } else {
-              updatedMobs.push({ ...mob, hp: newHp });
-            }
+            const newHp = mob.hp - damage;
+            if (newHp <= 0) killedMobs.push(mob.instanceId);
+            else updatedMobs.push({ ...mob, hp: newHp });
           });
 
           set({ currentMobs: updatedMobs });
-
-          get().addLogEntry({
-            type: 'ability',
-            message: `${ability.emoji} ${ability.name} hit ${mobs.length} enemies for ${effect.damage} each!`,
-            color: '#F97316'
-          });
-
+          get().addLogEntry({ type: 'ability', message: `${ability.emoji} Hit ${mobs.length} enemies for ${Math.floor(damage)} each!`, color: '#F97316' });
           killedMobs.forEach(id => get().killMob(id));
-        } else if (effect.type === 'execute') {
-          if (state.currentMobs.length > 0) {
-            const target = state.currentMobs[0];
-            const hpPercent = target.hp / target.maxHp;
-            const damage = hpPercent < effect.threshold
-              ? state.hero.stats.attack * effect.bonusDamage
-              : state.hero.stats.attack;
+        }
 
-            const newHp = target.hp - damage;
+        // === MANA CONSUME (use all mana for damage) ===
+        else if (effect.type === 'mana_consume') {
+          if (target) {
+            const manaSpent = hero.stats.mana;
+            const damage = manaSpent * effect.damagePerMana;
+            set(s => ({ hero: { ...s.hero, stats: { ...s.hero.stats, mana: 0 } } }));
+            applyDamage(damage, target, `${ability.emoji} MANA BOMB! ${Math.floor(damage)} damage (${manaSpent} mana)!`, '#EF4444');
+          }
+        }
 
-            get().addLogEntry({
-              type: 'ability',
-              message: hpPercent < effect.threshold
-                ? `${ability.emoji} EXECUTE! ${Math.floor(damage)} damage!`
-                : `${ability.emoji} ${ability.name} dealt ${Math.floor(damage)} damage`,
-              value: damage,
-              color: '#DC2626'
-            });
+        // === REFLECT STAT (damage based on enemy stat) ===
+        else if (effect.type === 'reflect_stat') {
+          if (target) {
+            const enemyStat = effect.stat === 'attack' ? target.attack : target.defense;
+            const damage = enemyStat * effect.multiplier;
+            applyDamage(damage, target, `${ability.emoji} Calculated! ${Math.floor(damage)} (enemy ${effect.stat} x${effect.multiplier})`, '#10B981');
+          }
+        }
 
-            if (newHp <= 0) {
-              get().killMob(target.instanceId);
-            } else {
+        // === GUARANTEED CRIT ===
+        else if (effect.type === 'guaranteed_crit') {
+          if (target) {
+            const damage = hero.stats.attack * effect.scaling * hero.stats.critDamage;
+            applyDamage(damage, target, `${ability.emoji} CRIT! ${Math.floor(damage)} damage!`, '#FBBF24');
+          }
+        }
+
+        // === TERNARY (different damage based on condition) ===
+        else if (effect.type === 'ternary') {
+          if (target) {
+            let conditionTrue = false;
+            if (effect.condition === 'hp_above') {
+              conditionTrue = (hero.stats.hp / hero.stats.maxHp) > effect.threshold;
+            }
+            const scaling = conditionTrue ? effect.trueScaling : effect.falseScaling;
+            const damage = hero.stats.attack * scaling;
+            applyDamage(damage, target, `${ability.emoji} ${conditionTrue ? 'Safe' : 'RISKY'} ${Math.floor(damage)} damage!`, conditionTrue ? '#6B7280' : '#EF4444');
+          }
+        }
+
+        // === HOT (Heal over time) ===
+        else if (effect.type === 'hot') {
+          const healPerTick = hero.stats.maxHp * effect.healPercent;
+          // Apply first tick immediately
+          set(s => ({
+            hero: { ...s.hero, stats: { ...s.hero.stats, hp: Math.min(s.hero.stats.maxHp, s.hero.stats.hp + healPerTick) } }
+          }));
+          get().addLogEntry({ type: 'heal', message: `${ability.emoji} HoT started! +${Math.floor(healPerTick)}/tick for ${effect.ticks}s`, color: '#22C55E' });
+          // Note: remaining ticks would need a buff system - simplified here
+        }
+
+        // === REFUND ON KILL ===
+        else if (effect.type === 'refund_on_kill') {
+          if (target) {
+            const damage = hero.stats.attack * effect.scaling;
+            const willKill = target.hp - damage <= 0;
+            applyDamage(damage, target, `${ability.emoji} ${Math.floor(damage)} damage!`, '#A855F7');
+            if (willKill) {
+              const refund = Math.floor(ability.manaCost * effect.refundPercent);
               set(s => ({
-                currentMobs: s.currentMobs.map(m =>
-                  m.instanceId === target.instanceId ? { ...m, hp: newHp } : m
-                )
+                hero: { ...s.hero, stats: { ...s.hero.stats, mana: Math.min(s.hero.stats.maxMana, s.hero.stats.mana + refund) } }
               }));
+              get().addLogEntry({ type: 'heal', message: `♻️ Kill refund: +${refund} mana!`, color: '#3B82F6' });
             }
           }
         }
@@ -1202,10 +1297,10 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'codequest-rpg-storage',
-      version: 9,
+      version: 10,
       migrate: (persistedState: unknown, version: number) => {
-        // Force fresh - new progression: manual start, buy Automation Core first
-        if (version < 9) {
+        // Force fresh - added many new abilities with coding-concept mechanics
+        if (version < 10) {
           return getInitialState();
         }
         return persistedState as GameState;

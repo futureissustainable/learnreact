@@ -532,31 +532,23 @@ export const EQUIPMENT: Record<string, Equipment> = {
 };
 
 // ============ ABILITIES ============
+// These abilities teach coding concepts through their mechanics!
+// Players must THINK about when to use each one optimally.
 
 export const ABILITIES: Ability[] = [
-  // Basic attack - main damage source, no mana cost, short cooldown
+  // ============================================================
+  // TIER 0: BASICS - Always available
+  // ============================================================
   {
     id: 'attack',
     name: 'Attack',
-    description: 'Basic attack. Click to deal damage!',
+    description: 'Basic attack. Your bread and butter.',
     manaCost: 0,
     cooldown: 1,
     currentCooldown: 0,
     effect: { type: 'damage', value: 0, scaling: 1.0 },
     unlocked: true,
     emoji: '⚔️'
-  },
-  // Starter abilities
-  {
-    id: 'power-strike',
-    name: 'Power Strike',
-    description: 'A powerful attack dealing 150% damage.',
-    manaCost: 10,
-    cooldown: 4,
-    currentCooldown: 0,
-    effect: { type: 'damage', value: 0, scaling: 1.5 },
-    unlocked: true,
-    emoji: '💥'
   },
   {
     id: 'heal',
@@ -569,10 +561,25 @@ export const ABILITIES: Ability[] = [
     unlocked: true,
     emoji: '💚'
   },
+
+  // ============================================================
+  // TIER 1: UNLOCKED BY SHOP ITEMS - Teaches basic concepts
+  // ============================================================
+  {
+    id: 'power-strike',
+    name: 'Power Strike',
+    description: 'Deal 150% damage. Simple but effective.',
+    manaCost: 10,
+    cooldown: 4,
+    currentCooldown: 0,
+    effect: { type: 'damage', value: 0, scaling: 1.5 },
+    unlocked: true,
+    emoji: '💥'
+  },
   {
     id: 'defend',
     name: 'Defend',
-    description: 'Block 50% of next incoming attack.',
+    description: 'Boost defense by 50 for 3 seconds.',
     manaCost: 5,
     cooldown: 3,
     currentCooldown: 0,
@@ -583,48 +590,235 @@ export const ABILITIES: Ability[] = [
   {
     id: 'meditate',
     name: 'Meditate',
-    description: 'Restore 20% of max mana.',
+    description: 'Restore 20% of max mana. Plan ahead!',
     manaCost: 0,
     cooldown: 8,
     currentCooldown: 0,
-    effect: { type: 'buff', stat: 'mana', value: 0, duration: 0 }, // Special handling in store
+    effect: { type: 'buff', stat: 'mana', value: 0, duration: 0 },
     unlocked: true,
     emoji: '🧘'
   },
 
-  // Unlocked through concepts
+  // ============================================================
+  // TIER 2: CONDITIONAL DAMAGE - Teaches if/else thinking
+  // ============================================================
+  {
+    id: 'execute',
+    name: 'Execute',
+    description: 'Deal 100% damage. If enemy HP < 30%, deal 300% instead!',
+    manaCost: 15,
+    cooldown: 6,
+    currentCooldown: 0,
+    effect: { type: 'execute', threshold: 0.3, bonusDamage: 3.0 },
+    unlocked: true,
+    emoji: '💀'
+  },
+  {
+    id: 'desperate-strike',
+    name: 'Desperate Strike',
+    description: 'Deal damage = 50% + (missing HP %). Lower HP = more damage!',
+    manaCost: 12,
+    cooldown: 5,
+    currentCooldown: 0,
+    effect: { type: 'desperation', baseScaling: 0.5 },
+    unlocked: true,
+    emoji: '🔥'
+  },
+  {
+    id: 'overcharge',
+    name: 'Overcharge',
+    description: 'Deal 80% damage. If mana > 70%, deal 200% instead.',
+    manaCost: 25,
+    cooldown: 7,
+    currentCooldown: 0,
+    effect: { type: 'conditional_damage', condition: 'mana_above', threshold: 0.7, lowScaling: 0.8, highScaling: 2.0 },
+    unlocked: true,
+    emoji: '⚡'
+  },
+
+  // ============================================================
+  // TIER 3: PERCENTAGE DAMAGE - Teaches math operations
+  // ============================================================
+  {
+    id: 'percent-slash',
+    name: '% Slash',
+    description: 'Deal 8% of enemy MAX HP as damage. Great vs tanks!',
+    manaCost: 18,
+    cooldown: 8,
+    currentCooldown: 0,
+    effect: { type: 'percent_max_hp', percent: 0.08 },
+    unlocked: true,
+    emoji: '📊'
+  },
+  {
+    id: 'finishing-blow',
+    name: 'Finishing Blow',
+    description: 'Deal 15% of enemy MISSING HP. Better as finisher!',
+    manaCost: 12,
+    cooldown: 5,
+    currentCooldown: 0,
+    effect: { type: 'percent_missing_hp', percent: 0.15 },
+    unlocked: true,
+    emoji: '🎯'
+  },
+  {
+    id: 'life-drain',
+    name: 'Life Drain',
+    description: 'Deal 120% damage. Heal for 50% of damage dealt.',
+    manaCost: 22,
+    cooldown: 9,
+    currentCooldown: 0,
+    effect: { type: 'lifesteal_burst', scaling: 1.2, healPercent: 0.5 },
+    unlocked: true,
+    emoji: '🧛'
+  },
+
+  // ============================================================
+  // TIER 4: COMBO & SEQUENCING - Teaches order of operations
+  // ============================================================
+  {
+    id: 'double-tap',
+    name: 'Double Tap',
+    description: 'Hit twice for 60% each. Total: 120% damage.',
+    manaCost: 14,
+    cooldown: 5,
+    currentCooldown: 0,
+    effect: { type: 'multi_hit', hits: 2, scaling: 0.6 },
+    unlocked: true,
+    emoji: '👆👆'
+  },
+  {
+    id: 'triple-strike',
+    name: 'Triple Strike',
+    description: 'Hit 3 times for 50% each. Great for on-hit effects!',
+    manaCost: 20,
+    cooldown: 8,
+    currentCooldown: 0,
+    effect: { type: 'multi_hit', hits: 3, scaling: 0.5 },
+    unlocked: true,
+    emoji: '🔱'
+  },
+  {
+    id: 'ramping-fury',
+    name: 'Ramping Fury',
+    description: 'Deal 80% damage. Each use adds +20% (resets on other ability).',
+    manaCost: 10,
+    cooldown: 3,
+    currentCooldown: 0,
+    effect: { type: 'ramping', baseScaling: 0.8, rampPerUse: 0.2 },
+    unlocked: true,
+    emoji: '📈'
+  },
+
+  // ============================================================
+  // TIER 5: RESOURCE MANAGEMENT - Teaches optimization
+  // ============================================================
+  {
+    id: 'efficient-strike',
+    name: 'Efficient Strike',
+    description: 'Deal 130% damage. Costs 5 less mana if HP > 80%.',
+    manaCost: 15,
+    cooldown: 4,
+    currentCooldown: 0,
+    effect: { type: 'conditional_cost', scaling: 1.3, condition: 'hp_above', threshold: 0.8, discount: 5 },
+    unlocked: true,
+    emoji: '💡'
+  },
+  {
+    id: 'mana-bomb',
+    name: 'Mana Bomb',
+    description: 'Consume ALL mana. Deal damage = 3x mana spent.',
+    manaCost: 1,
+    cooldown: 15,
+    currentCooldown: 0,
+    effect: { type: 'mana_consume', damagePerMana: 3 },
+    unlocked: true,
+    emoji: '💣'
+  },
+  {
+    id: 'conservation',
+    name: 'Conservation',
+    description: 'Deal 100% damage. If it kills, refund 50% mana cost.',
+    manaCost: 16,
+    cooldown: 5,
+    currentCooldown: 0,
+    effect: { type: 'refund_on_kill', scaling: 1.0, refundPercent: 0.5 },
+    unlocked: true,
+    emoji: '♻️'
+  },
+
+  // ============================================================
+  // TIER 6: UTILITY & BUFFS - Teaches state management
+  // ============================================================
+  {
+    id: 'focus',
+    name: 'Focus',
+    description: 'Next attack deals +100% damage. Think before you strike!',
+    manaCost: 8,
+    cooldown: 6,
+    currentCooldown: 0,
+    effect: { type: 'buff', stat: 'attack', value: 100, duration: 5 },
+    unlocked: true,
+    emoji: '🎯'
+  },
+  {
+    id: 'berserk',
+    name: 'Berserk',
+    description: '+50% attack speed, -30% defense for 8s. High risk!',
+    manaCost: 20,
+    cooldown: 20,
+    currentCooldown: 0,
+    effect: { type: 'berserk', attackSpeedBonus: 0.5, defenseReduction: 0.3, duration: 8 },
+    unlocked: true,
+    emoji: '😤'
+  },
+  {
+    id: 'calculated-strike',
+    name: 'Calculated Strike',
+    description: 'Deal damage = enemy attack * 2. Turn their power against them!',
+    manaCost: 18,
+    cooldown: 8,
+    currentCooldown: 0,
+    effect: { type: 'reflect_stat', stat: 'attack', multiplier: 2 },
+    unlocked: true,
+    emoji: '🧠'
+  },
+
+  // ============================================================
+  // UNLOCKED THROUGH CONCEPTS - Advanced abilities
+  // ============================================================
   {
     id: 'console-log',
     name: 'console.log()',
-    description: 'Debug attack. Always crits.',
+    description: 'Debug attack. Always crits! Damage = attack * 1.5.',
     manaCost: 15,
     cooldown: 5,
     currentCooldown: 0,
-    effect: { type: 'damage', value: 20, scaling: 1.0 },
+    effect: { type: 'guaranteed_crit', scaling: 1.5 },
     unlocked: false,
     requiredConcept: 'variables',
     emoji: '📝'
   },
   {
-    id: 'if-else',
-    name: 'if/else Strike',
-    description: 'Attack that deals bonus damage to low HP enemies.',
-    manaCost: 20,
-    cooldown: 6,
+    id: 'ternary-strike',
+    name: 'Ternary Strike',
+    description: 'hp > 50% ? deal 80% damage : deal 180% damage',
+    manaCost: 14,
+    cooldown: 5,
     currentCooldown: 0,
-    effect: { type: 'execute', threshold: 0.3, bonusDamage: 2.0 },
+    effect: { type: 'ternary', condition: 'hp_above', threshold: 0.5, trueScaling: 0.8, falseScaling: 1.8 },
     unlocked: false,
     requiredConcept: 'conditionals',
-    emoji: '🔀'
+    emoji: '❓'
   },
   {
     id: 'for-loop',
     name: 'for Loop',
-    description: 'Attack 3 times rapidly.',
+    description: 'for(i=0; i<4; i++) { attack() } - Hit 4x for 40% each.',
     manaCost: 30,
-    cooldown: 10,
+    cooldown: 12,
     currentCooldown: 0,
-    effect: { type: 'dot', damage: 15, ticks: 3, interval: 0.3 },
+    effect: { type: 'multi_hit', hits: 4, scaling: 0.4 },
     unlocked: false,
     requiredConcept: 'loops',
     emoji: '🔄'
@@ -632,38 +826,74 @@ export const ABILITIES: Ability[] = [
   {
     id: 'map-attack',
     name: '.map() Attack',
-    description: 'Hit ALL enemies on screen.',
+    description: 'enemies.map(e => damage(e)) - Hit ALL enemies for 80%!',
     manaCost: 40,
     cooldown: 15,
     currentCooldown: 0,
-    effect: { type: 'aoe', damage: 50, hitAll: true },
+    effect: { type: 'aoe', damage: 0, scaling: 0.8, hitAll: true },
     unlocked: false,
     requiredConcept: 'arrays-methods',
     emoji: '🗺️'
   },
   {
+    id: 'reduce-attack',
+    name: '.reduce() Finisher',
+    description: 'Deal damage = sum of all damage dealt this fight * 0.1',
+    manaCost: 50,
+    cooldown: 30,
+    currentCooldown: 0,
+    effect: { type: 'reduce_damage', multiplier: 0.1 },
+    unlocked: false,
+    requiredConcept: 'arrays-methods',
+    emoji: '➕'
+  },
+  {
     id: 'async-heal',
     name: 'Async Heal',
-    description: 'Heal over time. 50% HP over 5 seconds.',
+    description: 'await heal() - Restore 10% HP every second for 5s.',
     manaCost: 35,
     cooldown: 20,
     currentCooldown: 0,
-    effect: { type: 'dot', damage: -10, ticks: 5, interval: 1.0 },
+    effect: { type: 'hot', healPercent: 0.1, ticks: 5, interval: 1.0 },
     unlocked: false,
     requiredConcept: 'async-basics',
     emoji: '✨'
   },
   {
+    id: 'promise-chain',
+    name: 'Promise Chain',
+    description: 'attack().then(heal).then(attack) - Attack, heal 10%, attack.',
+    manaCost: 30,
+    cooldown: 10,
+    currentCooldown: 0,
+    effect: { type: 'promise_chain', actions: ['attack', 'heal_10', 'attack'] },
+    unlocked: false,
+    requiredConcept: 'async-basics',
+    emoji: '⛓️'
+  },
+  {
     id: 'use-effect',
     name: 'useEffect()',
-    description: 'Buff attack speed by 50% for 10 seconds.',
+    description: 'useEffect(() => buff, []) - +50% attack speed for 10s.',
     manaCost: 45,
     cooldown: 30,
     currentCooldown: 0,
     effect: { type: 'buff', stat: 'attackSpeed', value: 0.5, duration: 10 },
     unlocked: false,
     requiredConcept: 'react-hooks',
-    emoji: '⚡'
+    emoji: '⚛️'
+  },
+  {
+    id: 'use-state',
+    name: 'useState()',
+    description: 'const [dmg, setDmg] = useState(50) - Store 50 damage, release anytime.',
+    manaCost: 25,
+    cooldown: 12,
+    currentCooldown: 0,
+    effect: { type: 'stored_damage', baseDamage: 50, canStack: true },
+    unlocked: false,
+    requiredConcept: 'react-hooks',
+    emoji: '📦'
   }
 ];
 
