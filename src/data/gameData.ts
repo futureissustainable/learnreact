@@ -1422,16 +1422,25 @@ export const SHOP_ITEMS: Equipment[] = [
 ];
 
 export function getShopItemPrice(item: Equipment): number {
-  // Items that unlock features cost more but are worth it
-  const basePrice = item.unlocks ? 50 : 30;
-  const levelMultiplier = Math.pow(2, item.level - 1);
+  // Prices scale to match gold income progression:
+  // Zone 1 (~10g/kill): Tier 1 items 50-100g → 5-10 kills
+  // Zone 3 (~100g/kill): Tier 5-6 items 500-1500g → 5-15 kills
+  // Zone 5 (~1000g/kill): Tier 10-12 items 5k-15k → 5-15 kills
+
+  const basePrice = item.unlocks ? 40 : 25;
+
+  // 1.6x per level - matches gold scaling of 1.35^level with some buffer
+  const levelMultiplier = Math.pow(1.6, item.level - 1);
+
+  // Rarity adds moderate premium, not exponential
   const rarityMultiplier = {
     common: 1,
-    uncommon: 2,
-    rare: 4,
-    epic: 8,
-    legendary: 16
+    uncommon: 1.5,
+    rare: 2.5,
+    epic: 4,
+    legendary: 6
   };
+
   return Math.floor(basePrice * levelMultiplier * rarityMultiplier[item.rarity]);
 }
 

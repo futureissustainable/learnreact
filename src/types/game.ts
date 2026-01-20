@@ -375,6 +375,15 @@ export function calculateXpForLevel(level: number): number {
 
 export function calculateMobStats(template: MobTemplate, zoneLevel: number): Omit<Mob, 'instanceId' | 'attackCooldown'> {
   const levelMod = Math.pow(1.12, zoneLevel - 1);
+
+  // Gold scales EXPONENTIALLY to match item price progression
+  // Zone 1 (lvl 1): ~10g per kill → Tier 1 items (40-60g) in 4-6 kills
+  // Zone 2 (lvl 5): ~30g per kill → Tier 2 items (90-150g) in 3-5 kills
+  // Zone 3 (lvl 10): ~150g per kill → Tier 5-6 items (400-1000g) in 3-7 kills
+  // Zone 4 (lvl 15): ~700g per kill → Tier 8-9 items (2k-5k) in 3-7 kills
+  // Zone 5 (lvl 20): ~3500g per kill → Tier 10-12 items (5k-15k) in 2-5 kills
+  const goldScaling = Math.pow(1.35, zoneLevel - 1); // ~1.35x per level = matches item prices
+
   return {
     id: template.id,
     name: template.name,
@@ -387,7 +396,7 @@ export function calculateMobStats(template: MobTemplate, zoneLevel: number): Omi
     defense: Math.floor(template.baseDefense * levelMod),
     attackSpeed: template.attackSpeed,
     xpReward: Math.floor(10 * zoneLevel * template.xpMultiplier),
-    goldReward: Math.floor(5 * zoneLevel * template.goldMultiplier),
+    goldReward: Math.floor(8 * goldScaling * template.goldMultiplier),
     lootTable: template.lootTable,
     isBoss: template.isBoss
   };
