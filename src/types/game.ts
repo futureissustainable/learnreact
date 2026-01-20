@@ -91,6 +91,17 @@ export interface LootDrop {
 
 // ============ EQUIPMENT ============
 
+export type ScriptFeature =
+  | 'condition_hp_below'
+  | 'condition_hp_above'
+  | 'condition_enemy_hp_below'
+  | 'condition_mana_above'
+  | 'condition_ability_ready'
+  | 'action_power_strike'
+  | 'action_heal'
+  | 'loop_counter'
+  | 'variables';
+
 export interface Equipment {
   id: string;
   name: string;
@@ -100,6 +111,9 @@ export interface Equipment {
   stats: Partial<CombatStats>;
   description: string;
   emoji: string;
+  // What script features this item unlocks
+  unlocks?: ScriptFeature;
+  unlocksDescription?: string;
 }
 
 // ============ ABILITIES ============

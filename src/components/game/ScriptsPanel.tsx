@@ -2,28 +2,34 @@
 
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { ToggleLeft, ToggleRight, Code, Lightning, Plus, Trash, X } from '@phosphor-icons/react';
-import { ScriptCondition, ScriptAction } from '@/types/game';
+import { ToggleLeft, ToggleRight, Code, Lightning, Plus, Trash, X, Lock } from '@phosphor-icons/react';
+import { ScriptCondition, ScriptAction, ScriptFeature } from '@/types/game';
 
 interface ScriptsPanelProps {
   fullWidth?: boolean;
 }
 
-// Available conditions - more unlock as you learn concepts
-const CONDITIONS: { id: ScriptCondition['type']; label: string; description: string; requiredConcept?: string }[] = [
-  { id: 'always', label: 'Always', description: 'Run every tick (like while(true))' },
-  { id: 'hp_below', label: 'HP Below %', description: 'When health drops below threshold', requiredConcept: 'conditionals' },
-  { id: 'hp_above', label: 'HP Above %', description: 'When health is above threshold', requiredConcept: 'conditionals' },
-  { id: 'enemy_hp_below', label: 'Enemy HP Below %', description: 'When enemy health is low', requiredConcept: 'conditionals' },
-  { id: 'mana_above', label: 'Mana Above %', description: 'When mana is high enough', requiredConcept: 'conditionals' },
-  { id: 'ability_ready', label: 'Ability Ready', description: 'When specific ability is off cooldown', requiredConcept: 'functions' },
+// Conditions with their unlock requirements
+const CONDITIONS: {
+  id: ScriptCondition['type'];
+  label: string;
+  description: string;
+  requires?: ScriptFeature;
+  needsPercent?: boolean;
+}[] = [
+  { id: 'always', label: 'Always (while true)', description: 'Runs continuously - your first loop!' },
+  { id: 'hp_below', label: 'if (hp < X%)', description: 'When your health is low', requires: 'condition_hp_below', needsPercent: true },
+  { id: 'hp_above', label: 'if (hp > X%)', description: 'When your health is high', requires: 'condition_hp_above', needsPercent: true },
+  { id: 'mana_above', label: 'if (mana > X%)', description: 'When you have enough mana', requires: 'condition_mana_above', needsPercent: true },
+  { id: 'enemy_hp_below', label: 'if (enemy.hp < X%)', description: 'When enemy is weak - execute!', requires: 'condition_enemy_hp_below', needsPercent: true },
+  { id: 'ability_ready', label: 'if (ability.ready)', description: 'When ability is off cooldown', requires: 'condition_ability_ready' },
 ];
 
-// Available actions
-const ACTIONS: { id: string; label: string; description: string }[] = [
-  { id: 'attack', label: 'Use Attack', description: 'Basic attack ability' },
-  { id: 'power-strike', label: 'Use Power Strike', description: 'Strong attack (costs mana)' },
-  { id: 'heal', label: 'Use Heal', description: 'Restore HP (costs mana)' },
+// Actions with their unlock requirements
+const ACTIONS: { id: string; label: string; description: string; requires?: ScriptFeature }[] = [
+  { id: 'attack', label: 'attack()', description: 'Basic attack - always available' },
+  { id: 'heal', label: 'heal()', description: 'Restore HP (costs mana)', requires: 'action_heal' },
+  { id: 'power-strike', label: 'powerStrike()', description: 'Strong attack (costs mana)', requires: 'action_power_strike' },
 ];
 
 function generateCode(condition: ScriptCondition, action: ScriptAction): string {
@@ -51,75 +57,87 @@ function generateCode(condition: ScriptCondition, action: ScriptAction): string 
       conditionStr = 'true';
   }
 
-  const actionStr = action.type === 'use_ability'
-    ? `useAbility('${action.abilityId}')`
-    : 'attack()';
+  const abilityId = action.type === 'use_ability' ? action.abilityId : 'attack';
+  const actionName = abilityId === 'attack' ? 'attack' :
+                     abilityId === 'heal' ? 'heal' :
+                     abilityId === 'power-strike' ? 'powerStrike' : abilityId;
 
-  return `while (${conditionStr}) {\n  ${actionStr};\n}`;
+  return `while (${conditionStr}) {\n  ${actionName}();\n}`;
 }
 
 export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
   const hero = useGameStore(s => s.hero);
-  const concepts = useGameStore(s => s.concepts);
+  const inventory = useGameStore(s => s.inventory);
   const toggleScript = useGameStore(s => s.toggleScript);
   const addScript = useGameStore(s => s.addScript);
   const deleteScript = useGameStore(s => s.deleteScript);
 
-  const [showCreate, setShowCreate] = useState(false);
+  const [showCreate, setShowCreate] = useState(hero.scripts.length === 0); // Auto-open if no scripts
   const [selectedCondition, setSelectedCondition] = useState<ScriptCondition['type']>('always');
   const [selectedAction, setSelectedAction] = useState<string>('attack');
   const [conditionPercent, setConditionPercent] = useState(50);
   const [scriptName, setScriptName] = useState('');
 
-  // Check which conditions are unlocked
-  const isConditionUnlocked = (requiredConcept?: string) => {
-    if (!requiredConcept) return true;
-    return concepts.find(c => c.id === requiredConcept)?.learned ?? false;
+  // Get all unlocked features from inventory + equipped items
+  const getUnlockedFeatures = (): Set<ScriptFeature> => {
+    const features = new Set<ScriptFeature>();
+
+    // Check inventory
+    inventory.forEach(item => {
+      if (item.unlocks) features.add(item.unlocks);
+    });
+
+    // Check equipped items
+    if (hero.equipment.weapon?.unlocks) features.add(hero.equipment.weapon.unlocks);
+    if (hero.equipment.armor?.unlocks) features.add(hero.equipment.armor.unlocks);
+    if (hero.equipment.accessory?.unlocks) features.add(hero.equipment.accessory.unlocks);
+
+    return features;
+  };
+
+  const unlockedFeatures = getUnlockedFeatures();
+
+  const isFeatureUnlocked = (feature?: ScriptFeature) => {
+    if (!feature) return true; // No requirement = always available
+    return unlockedFeatures.has(feature);
   };
 
   const handleCreateScript = () => {
-    if (!scriptName.trim()) return;
+    const name = scriptName.trim() || 'My Script';
 
     let condition: ScriptCondition;
-    switch (selectedCondition) {
-      case 'hp_below':
-        condition = { type: 'hp_below', percent: conditionPercent };
-        break;
-      case 'hp_above':
-        condition = { type: 'hp_above', percent: conditionPercent };
-        break;
-      case 'enemy_hp_below':
-        condition = { type: 'enemy_hp_below', percent: conditionPercent };
-        break;
-      case 'mana_above':
-        condition = { type: 'mana_above', percent: conditionPercent };
-        break;
-      case 'ability_ready':
-        condition = { type: 'ability_ready', abilityId: selectedAction };
-        break;
-      default:
-        condition = { type: 'always' };
+    const condDef = CONDITIONS.find(c => c.id === selectedCondition);
+
+    if (condDef?.needsPercent) {
+      condition = { type: selectedCondition, percent: conditionPercent } as ScriptCondition;
+    } else if (selectedCondition === 'ability_ready') {
+      condition = { type: 'ability_ready', abilityId: selectedAction };
+    } else {
+      condition = { type: selectedCondition } as ScriptCondition;
     }
 
     const action: ScriptAction = { type: 'use_ability', abilityId: selectedAction };
     const code = generateCode(condition, action);
 
     addScript({
-      name: scriptName,
+      name,
       code,
       enabled: true,
       priority: 5,
       condition,
       action,
       cooldown: selectedCondition === 'always' ? 1 : 0.5,
-      conceptsUsed: selectedCondition !== 'always' ? ['conditionals'] : []
+      conceptsUsed: []
     });
 
     setShowCreate(false);
     setScriptName('');
-    setSelectedCondition('always');
-    setSelectedAction('attack');
   };
+
+  const availableConditions = CONDITIONS.filter(c => isFeatureUnlocked(c.requires));
+  const lockedConditions = CONDITIONS.filter(c => !isFeatureUnlocked(c.requires));
+  const availableActions = ACTIONS.filter(a => isFeatureUnlocked(a.requires));
+  const lockedActions = ACTIONS.filter(a => !isFeatureUnlocked(a.requires));
 
   return (
     <div className={`bg-[#1e1e2e] rounded-xl p-4 border border-[#313244] ${fullWidth ? 'max-w-2xl mx-auto' : ''}`}>
@@ -128,52 +146,60 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
           <Code size={16} className="text-[#cba6f7]" />
           <h3 className="font-semibold text-[#cdd6f4]">Scripts</h3>
         </div>
-        <button
-          onClick={() => setShowCreate(!showCreate)}
-          className="flex items-center gap-1 px-3 py-1.5 bg-[#cba6f7]/20 text-[#cba6f7] rounded-lg text-sm hover:bg-[#cba6f7]/30 transition-colors"
-        >
-          <Plus size={14} />
-          New
-        </button>
+        {!showCreate && (
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-1 px-3 py-1.5 bg-[#cba6f7]/20 text-[#cba6f7] rounded-lg text-sm hover:bg-[#cba6f7]/30 transition-colors"
+          >
+            <Plus size={14} />
+            New
+          </button>
+        )}
       </div>
 
       {/* Create Script Form */}
       {showCreate && (
         <div className="mb-4 p-4 bg-[#181825] rounded-lg border border-[#cba6f7]/30">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="font-medium text-[#cdd6f4]">Create Script</h4>
-            <button onClick={() => setShowCreate(false)} className="text-[#6c7086] hover:text-[#cdd6f4]">
-              <X size={16} />
-            </button>
+            <h4 className="font-medium text-[#cdd6f4]">
+              {hero.scripts.length === 0 ? '✨ Write Your First Script!' : 'Create Script'}
+            </h4>
+            {hero.scripts.length > 0 && (
+              <button onClick={() => setShowCreate(false)} className="text-[#6c7086] hover:text-[#cdd6f4]">
+                <X size={16} />
+              </button>
+            )}
           </div>
+
+          {hero.scripts.length === 0 && (
+            <p className="text-xs text-[#a6e3a1] mb-3 p-2 bg-[#a6e3a1]/10 rounded">
+              Scripts automate your combat! Start with <code className="text-[#f9e2af]">while(true)</code> + <code className="text-[#f9e2af]">attack()</code>
+            </p>
+          )}
 
           {/* Script Name */}
           <div className="mb-3">
-            <label className="text-xs text-[#6c7086] mb-1 block">Name</label>
+            <label className="text-xs text-[#6c7086] mb-1 block">Name (optional)</label>
             <input
               type="text"
               value={scriptName}
               onChange={(e) => setScriptName(e.target.value)}
-              placeholder="My Auto Attack"
+              placeholder="Auto Attack"
               className="w-full px-3 py-2 bg-[#11111b] border border-[#313244] rounded-lg text-sm text-[#cdd6f4] placeholder-[#6c7086] focus:border-[#cba6f7] focus:outline-none"
             />
           </div>
 
           {/* Condition */}
           <div className="mb-3">
-            <label className="text-xs text-[#6c7086] mb-1 block">When (Condition)</label>
+            <label className="text-xs text-[#6c7086] mb-1 block">Condition (when to run)</label>
             <select
               value={selectedCondition}
               onChange={(e) => setSelectedCondition(e.target.value as ScriptCondition['type'])}
               className="w-full px-3 py-2 bg-[#11111b] border border-[#313244] rounded-lg text-sm text-[#cdd6f4] focus:border-[#cba6f7] focus:outline-none"
             >
-              {CONDITIONS.map(cond => (
-                <option
-                  key={cond.id}
-                  value={cond.id}
-                  disabled={!isConditionUnlocked(cond.requiredConcept)}
-                >
-                  {cond.label} {!isConditionUnlocked(cond.requiredConcept) ? '(Locked)' : ''}
+              {availableConditions.map(cond => (
+                <option key={cond.id} value={cond.id}>
+                  {cond.label}
                 </option>
               ))}
             </select>
@@ -183,29 +209,30 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
           </div>
 
           {/* Percent slider for conditions that need it */}
-          {['hp_below', 'hp_above', 'enemy_hp_below', 'mana_above'].includes(selectedCondition) && (
+          {CONDITIONS.find(c => c.id === selectedCondition)?.needsPercent && (
             <div className="mb-3">
               <label className="text-xs text-[#6c7086] mb-1 block">Threshold: {conditionPercent}%</label>
               <input
                 type="range"
                 min="10"
                 max="90"
+                step="10"
                 value={conditionPercent}
                 onChange={(e) => setConditionPercent(Number(e.target.value))}
-                className="w-full"
+                className="w-full accent-[#cba6f7]"
               />
             </div>
           )}
 
           {/* Action */}
           <div className="mb-3">
-            <label className="text-xs text-[#6c7086] mb-1 block">Do (Action)</label>
+            <label className="text-xs text-[#6c7086] mb-1 block">Action (what to do)</label>
             <select
               value={selectedAction}
               onChange={(e) => setSelectedAction(e.target.value)}
               className="w-full px-3 py-2 bg-[#11111b] border border-[#313244] rounded-lg text-sm text-[#cdd6f4] focus:border-[#cba6f7] focus:outline-none"
             >
-              {ACTIONS.map(action => (
+              {availableActions.map(action => (
                 <option key={action.id} value={action.id}>
                   {action.label}
                 </option>
@@ -218,12 +245,14 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
 
           {/* Code Preview */}
           <div className="mb-3">
-            <label className="text-xs text-[#6c7086] mb-1 block">Generated Code</label>
+            <label className="text-xs text-[#6c7086] mb-1 block">Your Code</label>
             <pre className="text-xs bg-[#11111b] rounded p-3 overflow-x-auto font-mono text-[#a6e3a1] border border-[#313244]">
               {generateCode(
-                selectedCondition === 'always' ? { type: 'always' } :
-                selectedCondition === 'ability_ready' ? { type: 'ability_ready', abilityId: selectedAction } :
-                { type: selectedCondition, percent: conditionPercent } as ScriptCondition,
+                CONDITIONS.find(c => c.id === selectedCondition)?.needsPercent
+                  ? { type: selectedCondition, percent: conditionPercent } as ScriptCondition
+                  : selectedCondition === 'ability_ready'
+                    ? { type: 'ability_ready', abilityId: selectedAction }
+                    : { type: selectedCondition } as ScriptCondition,
                 { type: 'use_ability', abilityId: selectedAction }
               )}
             </pre>
@@ -231,11 +260,31 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
 
           <button
             onClick={handleCreateScript}
-            disabled={!scriptName.trim()}
-            className="w-full py-2 bg-[#cba6f7] text-[#1e1e2e] rounded-lg font-medium text-sm hover:bg-[#cba6f7]/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-2 bg-[#cba6f7] text-[#1e1e2e] rounded-lg font-medium text-sm hover:bg-[#cba6f7]/80 transition-colors"
           >
-            Create Script
+            {hero.scripts.length === 0 ? '🚀 Create & Start!' : 'Create Script'}
           </button>
+
+          {/* Locked features hint */}
+          {(lockedConditions.length > 0 || lockedActions.length > 0) && (
+            <div className="mt-3 pt-3 border-t border-[#313244]">
+              <p className="text-xs text-[#6c7086] flex items-center gap-1 mb-2">
+                <Lock size={12} /> Buy items in Shop to unlock:
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {lockedConditions.slice(0, 3).map(c => (
+                  <span key={c.id} className="text-[10px] px-2 py-0.5 bg-[#313244] text-[#6c7086] rounded">
+                    {c.label}
+                  </span>
+                ))}
+                {lockedActions.map(a => (
+                  <span key={a.id} className="text-[10px] px-2 py-0.5 bg-[#313244] text-[#6c7086] rounded">
+                    {a.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -254,7 +303,7 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
               <div className="flex-1">
                 <h4 className="font-medium text-[#cdd6f4] text-sm">{script.name}</h4>
                 <span className="text-xs text-[#6c7086]">
-                  Triggered {script.triggerCount}x
+                  Runs: {script.triggerCount}x
                 </span>
               </div>
 
@@ -280,25 +329,27 @@ export function ScriptsPanel({ fullWidth }: ScriptsPanelProps) {
             </pre>
           </div>
         ))}
-
-        {hero.scripts.length === 0 && !showCreate && (
-          <div className="text-center py-6">
-            <p className="text-[#6c7086] text-sm mb-2">No scripts yet</p>
-            <p className="text-xs text-[#6c7086]">
-              Click <span className="text-[#cba6f7]">+ New</span> to write your first script!
-            </p>
-          </div>
-        )}
       </div>
 
-      {/* Tip */}
-      <div className="mt-4 p-3 bg-[#181825] rounded-lg border border-[#313244]">
-        <p className="text-xs text-[#6c7086]">
-          <Lightning size={12} className="inline text-[#cba6f7] mr-1" />
-          Write a <code className="text-[#a6e3a1]">while(true)</code> script to auto-attack.
-          Learn JS concepts to unlock more conditions!
-        </p>
-      </div>
+      {/* First time guide */}
+      {hero.scripts.length === 0 && !showCreate && (
+        <div className="text-center py-6">
+          <p className="text-[#f9e2af] text-sm mb-2">No scripts yet!</p>
+          <p className="text-xs text-[#6c7086]">
+            Create your first <code className="text-[#a6e3a1]">while(true)</code> loop above
+          </p>
+        </div>
+      )}
+
+      {/* Tip when they have scripts */}
+      {hero.scripts.length > 0 && (
+        <div className="mt-4 p-3 bg-[#181825] rounded-lg border border-[#313244]">
+          <p className="text-xs text-[#6c7086]">
+            <Lightning size={12} className="inline text-[#f9e2af] mr-1" />
+            Buy items in the <span className="text-[#cba6f7]">Shop</span> to unlock more conditions & actions!
+          </p>
+        </div>
+      )}
     </div>
   );
 }

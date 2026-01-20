@@ -652,100 +652,155 @@ export const ABILITIES: Ability[] = [
 export const DEFAULT_SCRIPTS: AutoScript[] = [];
 
 // ============ SHOP ITEMS ============
-// Items available for purchase with gold
+// Items unlock script features! Progression: buy item → learn new coding concept
+// This is the core learning loop inspired by "The Farmer Was Replaced"
 
 export const SHOP_ITEMS: Equipment[] = [
+  // === TIER 1: First upgrades (50-100 gold) ===
   {
-    id: 'shop-wooden-sword',
-    name: 'Wooden Sword',
+    id: 'conditional-blade',
+    name: 'Conditional Blade',
     type: 'weapon',
     rarity: 'common',
     level: 1,
-    stats: { attack: 3 },
-    description: 'A basic wooden training sword.',
-    emoji: '🗡️'
+    stats: { attack: 2 },
+    description: 'A blade that teaches you to check conditions.',
+    emoji: '🗡️',
+    unlocks: 'condition_hp_below',
+    unlocksDescription: 'Unlocks: if (hp < X%) conditions'
   },
   {
-    id: 'shop-leather-armor',
-    name: 'Leather Armor',
-    type: 'armor',
-    rarity: 'common',
-    level: 1,
-    stats: { defense: 3, maxHp: 20 },
-    description: 'Simple leather protection.',
-    emoji: '🥋'
-  },
-  {
-    id: 'shop-health-ring',
-    name: 'Health Ring',
+    id: 'healing-tome',
+    name: 'Healing Tome',
     type: 'accessory',
     rarity: 'common',
     level: 1,
-    stats: { maxHp: 30 },
-    description: 'A ring that boosts vitality.',
-    emoji: '💍'
+    stats: { maxMana: 10 },
+    description: 'Ancient knowledge of restoration.',
+    emoji: '📖',
+    unlocks: 'action_heal',
+    unlocksDescription: 'Unlocks: heal() action in scripts'
+  },
+
+  // === TIER 2: Early game (150-250 gold) ===
+  {
+    id: 'power-gauntlets',
+    name: 'Power Gauntlets',
+    type: 'armor',
+    rarity: 'uncommon',
+    level: 2,
+    stats: { attack: 3, defense: 2 },
+    description: 'Empowers your strikes with raw force.',
+    emoji: '🧤',
+    unlocks: 'action_power_strike',
+    unlocksDescription: 'Unlocks: powerStrike() action'
   },
   {
-    id: 'shop-iron-sword',
+    id: 'mana-crystal',
+    name: 'Mana Crystal',
+    type: 'accessory',
+    rarity: 'uncommon',
+    level: 2,
+    stats: { maxMana: 20 },
+    description: 'Lets you sense your magical reserves.',
+    emoji: '💎',
+    unlocks: 'condition_mana_above',
+    unlocksDescription: 'Unlocks: if (mana > X%) conditions'
+  },
+  {
+    id: 'vigilant-helm',
+    name: 'Vigilant Helm',
+    type: 'armor',
+    rarity: 'uncommon',
+    level: 2,
+    stats: { defense: 4, maxHp: 15 },
+    description: 'Heightens awareness of your vitality.',
+    emoji: '⛑️',
+    unlocks: 'condition_hp_above',
+    unlocksDescription: 'Unlocks: if (hp > X%) conditions'
+  },
+
+  // === TIER 3: Mid game (400-600 gold) ===
+  {
+    id: 'executioner-blade',
+    name: 'Executioner Blade',
+    type: 'weapon',
+    rarity: 'rare',
+    level: 3,
+    stats: { attack: 8, critChance: 0.1 },
+    description: 'Senses when enemies are weak.',
+    emoji: '⚔️',
+    unlocks: 'condition_enemy_hp_below',
+    unlocksDescription: 'Unlocks: if (enemy.hp < X%) conditions'
+  },
+  {
+    id: 'cooldown-ring',
+    name: 'Cooldown Ring',
+    type: 'accessory',
+    rarity: 'rare',
+    level: 3,
+    stats: { attackSpeed: 0.1 },
+    description: 'Know when your abilities are ready.',
+    emoji: '💍',
+    unlocks: 'condition_ability_ready',
+    unlocksDescription: 'Unlocks: if (ability.ready) conditions'
+  },
+
+  // === STAT-ONLY ITEMS (no unlocks, just power) ===
+  {
+    id: 'iron-sword',
     name: 'Iron Sword',
     type: 'weapon',
     rarity: 'uncommon',
-    level: 5,
-    stats: { attack: 8, critChance: 0.05 },
-    description: 'A sturdy iron blade.',
-    emoji: '⚔️'
-  },
-  {
-    id: 'shop-chainmail',
-    name: 'Chainmail',
-    type: 'armor',
-    rarity: 'uncommon',
-    level: 5,
-    stats: { defense: 8, maxHp: 40 },
-    description: 'Interlocking rings of protection.',
-    emoji: '🛡️'
-  },
-  {
-    id: 'shop-mana-amulet',
-    name: 'Mana Amulet',
-    type: 'accessory',
-    rarity: 'uncommon',
-    level: 5,
-    stats: { maxMana: 30 },
-    description: 'Increases mana pool.',
-    emoji: '📿'
-  },
-  {
-    id: 'shop-steel-blade',
-    name: 'Steel Blade',
-    type: 'weapon',
-    rarity: 'rare',
-    level: 10,
-    stats: { attack: 15, critChance: 0.08, attackSpeed: 0.1 },
-    description: 'A finely crafted steel sword.',
+    level: 2,
+    stats: { attack: 5 },
+    description: 'A sturdy iron blade. Pure damage.',
     emoji: '🗡️'
   },
   {
-    id: 'shop-plate-armor',
+    id: 'chainmail',
+    name: 'Chainmail Armor',
+    type: 'armor',
+    rarity: 'uncommon',
+    level: 2,
+    stats: { defense: 6, maxHp: 30 },
+    description: 'Solid protection.',
+    emoji: '🛡️'
+  },
+  {
+    id: 'steel-blade',
+    name: 'Steel Blade',
+    type: 'weapon',
+    rarity: 'rare',
+    level: 3,
+    stats: { attack: 12, critDamage: 0.2 },
+    description: 'Finely crafted steel.',
+    emoji: '⚔️'
+  },
+  {
+    id: 'plate-armor',
     name: 'Plate Armor',
     type: 'armor',
     rarity: 'rare',
-    level: 10,
-    stats: { defense: 15, maxHp: 80 },
-    description: 'Heavy but protective.',
+    level: 3,
+    stats: { defense: 12, maxHp: 50 },
+    description: 'Heavy but very protective.',
     emoji: '🛡️'
   }
 ];
 
 export function getShopItemPrice(item: Equipment): number {
+  // Items that unlock features cost more but are worth it
+  const basePrice = item.unlocks ? 50 : 30;
+  const levelMultiplier = Math.pow(2, item.level - 1);
   const rarityMultiplier = {
     common: 1,
-    uncommon: 2.5,
-    rare: 6,
-    epic: 15,
-    legendary: 40
+    uncommon: 2,
+    rare: 4,
+    epic: 8,
+    legendary: 16
   };
-  return Math.floor(item.level * 20 * rarityMultiplier[item.rarity]);
+  return Math.floor(basePrice * levelMultiplier * rarityMultiplier[item.rarity]);
 }
 
 // ============ JS CONCEPTS ============
