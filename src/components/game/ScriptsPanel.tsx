@@ -10,26 +10,54 @@ interface ScriptsPanelProps {
 }
 
 // Conditions with their unlock requirements
+// Organized by learning progression
 const CONDITIONS: {
   id: ScriptCondition['type'];
   label: string;
   description: string;
   requires?: ScriptFeature;
   needsPercent?: boolean;
+  category: 'basic' | 'intermediate' | 'advanced';
 }[] = [
-  { id: 'always', label: 'Always (while true)', description: 'Runs continuously - your first loop!' },
-  { id: 'hp_below', label: 'if (hp < X%)', description: 'When your health is low', requires: 'condition_hp_below', needsPercent: true },
-  { id: 'hp_above', label: 'if (hp > X%)', description: 'When your health is high', requires: 'condition_hp_above', needsPercent: true },
-  { id: 'mana_above', label: 'if (mana > X%)', description: 'When you have enough mana', requires: 'condition_mana_above', needsPercent: true },
-  { id: 'enemy_hp_below', label: 'if (enemy.hp < X%)', description: 'When enemy is weak - execute!', requires: 'condition_enemy_hp_below', needsPercent: true },
-  { id: 'ability_ready', label: 'if (ability.ready)', description: 'When ability is off cooldown', requires: 'condition_ability_ready' },
+  // === BASIC: Always available or early unlocks ===
+  { id: 'always', label: 'while (true)', description: 'Runs continuously - your first loop!', category: 'basic' },
+  { id: 'hp_below', label: 'if (hp < X%)', description: 'When your health is low', requires: 'condition_hp_below', needsPercent: true, category: 'basic' },
+  { id: 'hp_above', label: 'if (hp > X%)', description: 'When your health is high', requires: 'condition_hp_above', needsPercent: true, category: 'basic' },
+  { id: 'mana_above', label: 'if (mana > X%)', description: 'When you have enough mana', requires: 'condition_mana_above', needsPercent: true, category: 'basic' },
+  { id: 'mana_below', label: 'if (mana < X%)', description: 'When mana is running low', requires: 'condition_mana_above', needsPercent: true, category: 'basic' },
+  { id: 'enemy_hp_below', label: 'if (enemy.hp < X%)', description: 'Execute when enemy is weak!', requires: 'condition_enemy_hp_below', needsPercent: true, category: 'basic' },
+  { id: 'enemy_hp_above', label: 'if (enemy.hp > X%)', description: 'When enemy is still strong', requires: 'condition_enemy_hp_below', needsPercent: true, category: 'basic' },
+  { id: 'ability_ready', label: 'if (ability.ready)', description: 'When ability is off cooldown', requires: 'condition_ability_ready', category: 'basic' },
+
+  // === INTERMEDIATE: Event-based triggers ===
+  { id: 'on_kill', label: 'onKill()', description: 'Triggers when you kill an enemy', requires: 'loop_for', category: 'intermediate' },
+  { id: 'on_crit', label: 'onCrit()', description: 'Triggers on critical hit', requires: 'loop_for', category: 'intermediate' },
+  { id: 'on_hit', label: 'onHit()', description: 'Triggers when you hit enemy', requires: 'loop_for', category: 'intermediate' },
+
+  // === ADVANCED: Complex conditions (future expansion) ===
+  { id: 'never', label: 'if (false)', description: 'Never runs - useful for disabling', requires: 'operator_not', category: 'advanced' },
 ];
 
 // Actions with their unlock requirements
-const ACTIONS: { id: string; label: string; description: string; requires?: ScriptFeature }[] = [
-  { id: 'attack', label: 'attack()', description: 'Basic attack - always available' },
-  { id: 'heal', label: 'heal()', description: 'Restore HP (costs mana)', requires: 'action_heal' },
-  { id: 'power-strike', label: 'powerStrike()', description: 'Strong attack (costs mana)', requires: 'action_power_strike' },
+// Organized by combat role
+const ACTIONS: {
+  id: string;
+  label: string;
+  description: string;
+  requires?: ScriptFeature;
+  category: 'damage' | 'defense' | 'utility';
+  manaCost?: number;
+}[] = [
+  // === DAMAGE: Ways to hurt enemies ===
+  { id: 'attack', label: 'attack()', description: 'Basic attack - always available', category: 'damage', manaCost: 0 },
+  { id: 'power-strike', label: 'powerStrike()', description: 'Strong attack (10 mana)', requires: 'action_power_strike', category: 'damage', manaCost: 10 },
+
+  // === DEFENSE: Ways to stay alive ===
+  { id: 'heal', label: 'heal()', description: 'Restore 30% HP (20 mana)', requires: 'action_heal', category: 'defense', manaCost: 20 },
+  { id: 'defend', label: 'defend()', description: 'Block 50% damage next hit (5 mana)', requires: 'action_defend', category: 'defense', manaCost: 5 },
+
+  // === UTILITY: Resource management ===
+  { id: 'meditate', label: 'meditate()', description: 'Restore 20% mana (skips attack)', requires: 'action_mana_regen', category: 'utility', manaCost: 0 },
 ];
 
 function generateCode(condition: ScriptCondition, action: ScriptAction): string {

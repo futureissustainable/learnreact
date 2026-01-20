@@ -426,6 +426,28 @@ export const useGameStore = create<GameStore>()(
         // Apply effect
         const effect = ability.effect;
 
+        // Special handling for meditate (restore mana)
+        if (abilityId === 'meditate') {
+          const manaRestore = Math.floor(state.hero.stats.maxMana * 0.2);
+          set(s => ({
+            hero: {
+              ...s.hero,
+              stats: {
+                ...s.hero.stats,
+                mana: Math.min(s.hero.stats.maxMana, s.hero.stats.mana + manaRestore)
+              }
+            }
+          }));
+
+          get().addLogEntry({
+            type: 'heal',
+            message: `${ability.emoji} ${ability.name} restored ${manaRestore} mana!`,
+            value: manaRestore,
+            color: '#3B82F6'
+          });
+          return;
+        }
+
         if (effect.type === 'damage') {
           const baseDamage = effect.value + state.hero.stats.attack * effect.scaling;
           if (state.currentMobs.length > 0) {
@@ -697,8 +719,14 @@ export const useGameStore = create<GameStore>()(
             case 'mana_above':
               conditionMet = (hero.stats.mana / hero.stats.maxMana) > (script.condition.percent / 100);
               break;
+            case 'mana_below':
+              conditionMet = (hero.stats.mana / hero.stats.maxMana) < (script.condition.percent / 100);
+              break;
             case 'enemy_hp_below':
               conditionMet = mob ? (mob.hp / mob.maxHp) < (script.condition.percent / 100) : false;
+              break;
+            case 'enemy_hp_above':
+              conditionMet = mob ? (mob.hp / mob.maxHp) > (script.condition.percent / 100) : false;
               break;
             case 'ability_ready':
               const abilityCondition = script.condition as { type: 'ability_ready'; abilityId: string };
@@ -706,7 +734,12 @@ export const useGameStore = create<GameStore>()(
               conditionMet = ability ? ability.currentCooldown <= 0 && hero.stats.mana >= ability.manaCost : false;
               break;
             case 'on_kill':
-              // This would be triggered differently
+            case 'on_crit':
+            case 'on_hit':
+              // These are event-based triggers - handled separately in combat
+              break;
+            case 'never':
+              conditionMet = false;
               break;
             case 'always':
               conditionMet = true;
@@ -1169,10 +1202,10 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'codequest-rpg-storage',
-      version: 6,
+      version: 7,
       migrate: (persistedState: unknown, version: number) => {
-        // Force fresh state for old versions - equipment now unlocks script features
-        if (version < 6) {
+        // Force fresh state for old versions - expanded shop with full JS curriculum
+        if (version < 7) {
           return getInitialState();
         }
         return persistedState as GameState;

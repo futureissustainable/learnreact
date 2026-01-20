@@ -92,15 +92,77 @@ export interface LootDrop {
 // ============ EQUIPMENT ============
 
 export type ScriptFeature =
-  | 'condition_hp_below'
-  | 'condition_hp_above'
-  | 'condition_enemy_hp_below'
-  | 'condition_mana_above'
-  | 'condition_ability_ready'
-  | 'action_power_strike'
-  | 'action_heal'
-  | 'loop_counter'
-  | 'variables';
+  // === TIER 1: Basic Conditions (if statements) ===
+  | 'condition_hp_below'        // if (hp < X%)
+  | 'condition_hp_above'        // if (hp > X%)
+  | 'condition_enemy_hp_below'  // if (enemy.hp < X%)
+  | 'condition_mana_above'      // if (mana > X%)
+  | 'condition_ability_ready'   // if (ability.ready)
+
+  // === TIER 2: Actions (function calls) ===
+  | 'action_heal'               // heal()
+  | 'action_power_strike'       // powerStrike()
+  | 'action_defend'             // defend() - reduce damage taken
+  | 'action_mana_regen'         // meditiate() - restore mana
+
+  // === TIER 3: Logical Operators ===
+  | 'operator_and'              // && - combine conditions
+  | 'operator_or'               // || - alternative conditions
+  | 'operator_not'              // ! - negate conditions
+
+  // === TIER 4: Comparison Operators ===
+  | 'comparison_equals'         // === strict equality
+  | 'comparison_not_equals'     // !== strict inequality
+  | 'comparison_greater_equal'  // >= greater or equal
+  | 'comparison_less_equal'     // <= less or equal
+
+  // === TIER 5: Variables & Math ===
+  | 'variables_let'             // let - mutable variables
+  | 'variables_const'           // const - immutable variables
+  | 'math_operations'           // +, -, *, /, % in conditions
+  | 'math_random'               // Math.random() for chance-based
+
+  // === TIER 6: Loops ===
+  | 'loop_for'                  // for (let i = 0; i < n; i++)
+  | 'loop_counter'              // Access to loop counter variable
+  | 'loop_break'                // break - exit loop early
+  | 'loop_continue'             // continue - skip iteration
+
+  // === TIER 7: Arrays ===
+  | 'array_length'              // .length property
+  | 'array_foreach'             // .forEach() method
+  | 'array_map'                 // .map() method
+  | 'array_filter'              // .filter() method
+  | 'array_find'                // .find() method
+  | 'array_includes'            // .includes() method
+
+  // === TIER 8: Functions ===
+  | 'function_define'           // Define custom functions
+  | 'function_params'           // Function parameters
+  | 'function_return'           // Return values
+  | 'function_arrow'            // Arrow function syntax () => {}
+
+  // === TIER 9: Objects ===
+  | 'object_access'             // object.property or object['key']
+  | 'object_destructure'        // const { hp, mana } = player
+  | 'object_spread'             // ...spread operator
+
+  // === TIER 10: Advanced ===
+  | 'ternary_operator'          // condition ? a : b
+  | 'switch_statement'          // switch/case
+  | 'try_catch'                 // try/catch error handling
+  | 'template_literals'         // `Hello ${name}`
+
+  // === TIER 11: Async (Endgame) ===
+  | 'promise_then'              // .then() chaining
+  | 'async_await'               // async/await syntax
+  | 'setTimeout_setInterval'    // Timers
+
+  // === TIER 12: React (Final) ===
+  | 'react_useState'            // useState hook
+  | 'react_useEffect'           // useEffect hook
+  | 'react_props'               // Component props
+  | 'react_events';             // Event handlers onClick, etc.
 
 export interface Equipment {
   id: string;
