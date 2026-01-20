@@ -188,11 +188,17 @@ export const useGameStore = create<GameStore>()(
 
       gameTick: (deltaTime) => {
         const state = get();
-        if (!state.isAutoBattling || state.isPaused) return;
+        if (state.isPaused) return;
 
         const adjustedDelta = deltaTime * state.combatSpeed;
+        const inCombat = state.currentZone && state.currentMobs.length > 0;
 
-        // Update ability cooldowns and buffs first
+        // ============================================
+        // ALWAYS TICK: Mana regen, cooldowns, buffs
+        // ============================================
+        // Mana regenerates faster in combat (2/s), slower out of combat (1/s)
+        const manaRegenRate = inCombat ? 2 : 1;
+
         set(s => ({
           hero: {
             ...s.hero,
@@ -208,7 +214,7 @@ export const useGameStore = create<GameStore>()(
               .filter(buff => buff.remainingDuration > 0),
             stats: {
               ...s.hero.stats,
-              mana: Math.min(s.hero.stats.maxMana, s.hero.stats.mana + adjustedDelta * 2)
+              mana: Math.min(s.hero.stats.maxMana, s.hero.stats.mana + adjustedDelta * manaRegenRate)
             }
           },
           lastTick: Date.now(),
@@ -218,38 +224,41 @@ export const useGameStore = create<GameStore>()(
         // Recalculate stats with buffs
         get().recalculateStats();
 
-        // NO passive auto-attack! Player must use abilities or scripts
-        // Damage only comes from:
-        // 1. Manually clicking abilities
-        // 2. Scripts the player has written/enabled
+        // ============================================
+        // IN COMBAT: Mob attacks (regardless of auto-battle)
+        // ============================================
+        if (inCombat) {
+          const currentMobs = get().currentMobs;
+          currentMobs.forEach(mob => {
+            const newCooldown = mob.attackCooldown - adjustedDelta;
+            if (newCooldown <= 0) {
+              // Update cooldown first, then attack
+              set(s => ({
+                currentMobs: s.currentMobs.map(m =>
+                  m.instanceId === mob.instanceId
+                    ? { ...m, attackCooldown: 1 / m.attackSpeed }
+                    : m
+                )
+              }));
+              get().mobAttack(mob);
+            } else {
+              set(s => ({
+                currentMobs: s.currentMobs.map(m =>
+                  m.instanceId === mob.instanceId
+                    ? { ...m, attackCooldown: newCooldown }
+                    : m
+                )
+              }));
+            }
+          });
+        }
 
-        // Update mob cooldowns and process attacks
-        const currentMobs = get().currentMobs;
-        currentMobs.forEach(mob => {
-          const newCooldown = mob.attackCooldown - adjustedDelta;
-          if (newCooldown <= 0) {
-            // Update cooldown first, then attack
-            set(s => ({
-              currentMobs: s.currentMobs.map(m =>
-                m.instanceId === mob.instanceId
-                  ? { ...m, attackCooldown: 1 / m.attackSpeed }
-                  : m
-              )
-            }));
-            get().mobAttack(mob);
-          } else {
-            set(s => ({
-              currentMobs: s.currentMobs.map(m =>
-                m.instanceId === mob.instanceId
-                  ? { ...m, attackCooldown: newCooldown }
-                  : m
-              )
-            }));
-          }
-        });
-
-        // Evaluate automation scripts (only ones player has enabled)
-        get().evaluateScripts();
+        // ============================================
+        // AUTO-BATTLE ONLY: Evaluate automation scripts
+        // ============================================
+        if (state.isAutoBattling) {
+          get().evaluateScripts();
+        }
       },
 
       spawnMob: () => {
@@ -417,7 +426,7 @@ export const useGameStore = create<GameStore>()(
             ...s.hero,
             stats: {
               ...s.hero.stats,
-              mana: s.hero.stats.mana - ability.manaCost
+              mana: Math.max(0, s.hero.stats.mana - ability.manaCost)
             },
             abilities: updatedAbilities
           }
@@ -1297,10 +1306,10 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'codequest-rpg-storage',
-      version: 10,
+      version: 11,
       migrate: (persistedState: unknown, version: number) => {
-        // Force fresh - added many new abilities with coding-concept mechanics
-        if (version < 10) {
+        // Force fresh - abilities now locked behind concept progression
+        if (version < 11) {
           return getInitialState();
         }
         return persistedState as GameState;

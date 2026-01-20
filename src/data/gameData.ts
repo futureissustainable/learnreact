@@ -563,224 +563,242 @@ export const ABILITIES: Ability[] = [
   },
 
   // ============================================================
-  // TIER 1: UNLOCKED BY SHOP ITEMS - Teaches basic concepts
+  // TIER 1: VARIABLES - Learn let damage = attack;
   // ============================================================
   {
     id: 'power-strike',
     name: 'Power Strike',
-    description: 'Deal 150% damage. Simple but effective.',
+    description: 'let damage = attack * 1.5; // Store enhanced damage',
     manaCost: 10,
     cooldown: 4,
     currentCooldown: 0,
     effect: { type: 'damage', value: 0, scaling: 1.5 },
-    unlocked: true,
+    unlocked: false,
+    requiredConcept: 'variables',
     emoji: '💥'
   },
   {
     id: 'defend',
     name: 'Defend',
-    description: 'Boost defense by 50 for 3 seconds.',
+    description: 'let shield = 50; // Assign defense value',
     manaCost: 5,
     cooldown: 3,
     currentCooldown: 0,
     effect: { type: 'buff', stat: 'defense', value: 50, duration: 3 },
-    unlocked: true,
+    unlocked: false,
+    requiredConcept: 'variables',
     emoji: '🛡️'
   },
   {
     id: 'meditate',
     name: 'Meditate',
-    description: 'Restore 20% of max mana. Plan ahead!',
+    description: 'const restore = maxMana * 0.2; // Calculate mana restore',
     manaCost: 0,
     cooldown: 8,
     currentCooldown: 0,
     effect: { type: 'buff', stat: 'mana', value: 0, duration: 0 },
-    unlocked: true,
+    unlocked: false,
+    requiredConcept: 'variables',
     emoji: '🧘'
   },
 
   // ============================================================
-  // TIER 2: CONDITIONAL DAMAGE - Teaches if/else thinking
+  // TIER 2: CONDITIONALS - Learn if (condition) { }
   // ============================================================
   {
     id: 'execute',
     name: 'Execute',
-    description: 'Deal 100% damage. If enemy HP < 30%, deal 300% instead!',
+    description: 'if (enemy.hp < 30%) { damage *= 3; } // Conditional bonus!',
     manaCost: 15,
     cooldown: 6,
     currentCooldown: 0,
     effect: { type: 'execute', threshold: 0.3, bonusDamage: 3.0 },
-    unlocked: true,
+    unlocked: false,
+    requiredConcept: 'conditionals',
     emoji: '💀'
   },
   {
     id: 'desperate-strike',
     name: 'Desperate Strike',
-    description: 'Deal damage = 50% + (missing HP %). Lower HP = more damage!',
+    description: 'damage = 50% + missingHpPercent; // Lower HP = more power!',
     manaCost: 12,
     cooldown: 5,
     currentCooldown: 0,
     effect: { type: 'desperation', baseScaling: 0.5 },
-    unlocked: true,
+    unlocked: false,
+    requiredConcept: 'conditionals',
     emoji: '🔥'
   },
   {
     id: 'overcharge',
     name: 'Overcharge',
-    description: 'Deal 80% damage. If mana > 70%, deal 200% instead.',
+    description: 'if (mana > 70%) { damage = 200%; } else { damage = 80%; }',
     manaCost: 25,
     cooldown: 7,
     currentCooldown: 0,
     effect: { type: 'conditional_damage', condition: 'mana_above', threshold: 0.7, lowScaling: 0.8, highScaling: 2.0 },
-    unlocked: true,
+    unlocked: false,
+    requiredConcept: 'conditionals',
     emoji: '⚡'
   },
 
   // ============================================================
-  // TIER 3: PERCENTAGE DAMAGE - Teaches math operations
-  // ============================================================
-  {
-    id: 'percent-slash',
-    name: '% Slash',
-    description: 'Deal 8% of enemy MAX HP as damage. Great vs tanks!',
-    manaCost: 18,
-    cooldown: 8,
-    currentCooldown: 0,
-    effect: { type: 'percent_max_hp', percent: 0.08 },
-    unlocked: true,
-    emoji: '📊'
-  },
-  {
-    id: 'finishing-blow',
-    name: 'Finishing Blow',
-    description: 'Deal 15% of enemy MISSING HP. Better as finisher!',
-    manaCost: 12,
-    cooldown: 5,
-    currentCooldown: 0,
-    effect: { type: 'percent_missing_hp', percent: 0.15 },
-    unlocked: true,
-    emoji: '🎯'
-  },
-  {
-    id: 'life-drain',
-    name: 'Life Drain',
-    description: 'Deal 120% damage. Heal for 50% of damage dealt.',
-    manaCost: 22,
-    cooldown: 9,
-    currentCooldown: 0,
-    effect: { type: 'lifesteal_burst', scaling: 1.2, healPercent: 0.5 },
-    unlocked: true,
-    emoji: '🧛'
-  },
-
-  // ============================================================
-  // TIER 4: COMBO & SEQUENCING - Teaches order of operations
+  // TIER 3: LOOPS - Learn for (let i = 0; i < n; i++)
   // ============================================================
   {
     id: 'double-tap',
     name: 'Double Tap',
-    description: 'Hit twice for 60% each. Total: 120% damage.',
+    description: 'for (let i = 0; i < 2; i++) { hit(60%); } // Loop twice!',
     manaCost: 14,
     cooldown: 5,
     currentCooldown: 0,
     effect: { type: 'multi_hit', hits: 2, scaling: 0.6 },
-    unlocked: true,
+    unlocked: false,
+    requiredConcept: 'loops',
     emoji: '👆👆'
   },
   {
     id: 'triple-strike',
     name: 'Triple Strike',
-    description: 'Hit 3 times for 50% each. Great for on-hit effects!',
+    description: 'for (let i = 0; i < 3; i++) { hit(50%); } // Loop 3x!',
     manaCost: 20,
     cooldown: 8,
     currentCooldown: 0,
     effect: { type: 'multi_hit', hits: 3, scaling: 0.5 },
-    unlocked: true,
+    unlocked: false,
+    requiredConcept: 'loops',
     emoji: '🔱'
   },
   {
     id: 'ramping-fury',
     name: 'Ramping Fury',
-    description: 'Deal 80% damage. Each use adds +20% (resets on other ability).',
+    description: 'let stack = 0; while(true) { damage += stack++ * 20%; }',
     manaCost: 10,
     cooldown: 3,
     currentCooldown: 0,
     effect: { type: 'ramping', baseScaling: 0.8, rampPerUse: 0.2 },
-    unlocked: true,
+    unlocked: false,
+    requiredConcept: 'loops',
     emoji: '📈'
   },
 
   // ============================================================
-  // TIER 5: RESOURCE MANAGEMENT - Teaches optimization
+  // TIER 4: FUNCTIONS - Learn function calc(x) { return x; }
+  // ============================================================
+  {
+    id: 'percent-slash',
+    name: '% Slash',
+    description: 'function damage(enemy) { return enemy.maxHp * 0.08; }',
+    manaCost: 18,
+    cooldown: 8,
+    currentCooldown: 0,
+    effect: { type: 'percent_max_hp', percent: 0.08 },
+    unlocked: false,
+    requiredConcept: 'functions',
+    emoji: '📊'
+  },
+  {
+    id: 'finishing-blow',
+    name: 'Finishing Blow',
+    description: 'function finish(e) { return (e.maxHp - e.hp) * 0.15; }',
+    manaCost: 12,
+    cooldown: 5,
+    currentCooldown: 0,
+    effect: { type: 'percent_missing_hp', percent: 0.15 },
+    unlocked: false,
+    requiredConcept: 'functions',
+    emoji: '🎯'
+  },
+  {
+    id: 'life-drain',
+    name: 'Life Drain',
+    description: 'function drain(dmg) { heal(dmg * 0.5); return dmg; }',
+    manaCost: 22,
+    cooldown: 9,
+    currentCooldown: 0,
+    effect: { type: 'lifesteal_burst', scaling: 1.2, healPercent: 0.5 },
+    unlocked: false,
+    requiredConcept: 'functions',
+    emoji: '🧛'
+  },
+
+  // ============================================================
+  // TIER 5: ARRAYS - Learn const arr = []; arr.push();
   // ============================================================
   {
     id: 'efficient-strike',
     name: 'Efficient Strike',
-    description: 'Deal 130% damage. Costs 5 less mana if HP > 80%.',
+    description: 'costs.filter(c => hp > 80%).reduce((a,b) => a-5, cost);',
     manaCost: 15,
     cooldown: 4,
     currentCooldown: 0,
     effect: { type: 'conditional_cost', scaling: 1.3, condition: 'hp_above', threshold: 0.8, discount: 5 },
-    unlocked: true,
+    unlocked: false,
+    requiredConcept: 'arrays-basics',
     emoji: '💡'
   },
   {
     id: 'mana-bomb',
     name: 'Mana Bomb',
-    description: 'Consume ALL mana. Deal damage = 3x mana spent.',
+    description: '[...allMana].forEach(m => damage += m * 3); mana = 0;',
     manaCost: 1,
     cooldown: 15,
     currentCooldown: 0,
     effect: { type: 'mana_consume', damagePerMana: 3 },
-    unlocked: true,
+    unlocked: false,
+    requiredConcept: 'arrays-basics',
     emoji: '💣'
   },
   {
     id: 'conservation',
     name: 'Conservation',
-    description: 'Deal 100% damage. If it kills, refund 50% mana cost.',
+    description: 'if (kills.includes(target)) { mana.push(refund); }',
     manaCost: 16,
     cooldown: 5,
     currentCooldown: 0,
     effect: { type: 'refund_on_kill', scaling: 1.0, refundPercent: 0.5 },
-    unlocked: true,
+    unlocked: false,
+    requiredConcept: 'arrays-basics',
     emoji: '♻️'
   },
 
   // ============================================================
-  // TIER 6: UTILITY & BUFFS - Teaches state management
+  // TIER 6: OBJECTS - Learn const obj = { key: value };
   // ============================================================
   {
     id: 'focus',
     name: 'Focus',
-    description: 'Next attack deals +100% damage. Think before you strike!',
+    description: 'player.buffs = { ...player.buffs, attack: +100 };',
     manaCost: 8,
     cooldown: 6,
     currentCooldown: 0,
     effect: { type: 'buff', stat: 'attack', value: 100, duration: 5 },
-    unlocked: true,
+    unlocked: false,
+    requiredConcept: 'objects',
     emoji: '🎯'
   },
   {
     id: 'berserk',
     name: 'Berserk',
-    description: '+50% attack speed, -30% defense for 8s. High risk!',
+    description: 'Object.assign(stats, { atkSpd: +50%, def: -30% });',
     manaCost: 20,
     cooldown: 20,
     currentCooldown: 0,
     effect: { type: 'berserk', attackSpeedBonus: 0.5, defenseReduction: 0.3, duration: 8 },
-    unlocked: true,
+    unlocked: false,
+    requiredConcept: 'objects',
     emoji: '😤'
   },
   {
     id: 'calculated-strike',
     name: 'Calculated Strike',
-    description: 'Deal damage = enemy attack * 2. Turn their power against them!',
+    description: 'const dmg = enemy.attack * 2; // Read enemy object',
     manaCost: 18,
     cooldown: 8,
     currentCooldown: 0,
     effect: { type: 'reflect_stat', stat: 'attack', multiplier: 2 },
-    unlocked: true,
+    unlocked: false,
+    requiredConcept: 'objects',
     emoji: '🧠'
   },
 
@@ -1490,7 +1508,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'variables',
     description: 'Store and name values with let, const, and var.',
     codeExample: `let damage = 10;\nconst MAX_HP = 100;\nlet playerName = "Hero";`,
-    unlocksAbilities: ['console-log'],
+    unlocksAbilities: ['power-strike', 'defend', 'meditate'],
     unlocksConditions: [],
     statBonus: { attack: 5 },
     learned: false,
@@ -1498,7 +1516,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     currentXp: 0,
     prerequisites: [],
     learnByDoing: [
-      { id: 'kill-10', description: 'Defeat 10 enemies', type: 'kill_count', target: 10, current: 0, completed: false }
+      { id: 'kill-10', description: 'Defeat 10 enemies with Attack', type: 'kill_count', target: 10, current: 0, completed: false }
     ]
   },
   {
@@ -1507,7 +1525,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'conditionals',
     description: 'Make decisions with if, else, and ternary operators.',
     codeExample: `if (player.hp < 50) {\n  heal();\n} else {\n  attack();\n}`,
-    unlocksAbilities: ['if-else'],
+    unlocksAbilities: ['execute', 'desperate-strike', 'overcharge', 'ternary-strike'],
     unlocksConditions: ['hp_below', 'hp_above', 'enemy_hp_below'],
     statBonus: { critChance: 0.05 },
     learned: false,
@@ -1515,7 +1533,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     currentXp: 0,
     prerequisites: ['variables'],
     learnByDoing: [
-      { id: 'use-heal-5', description: 'Use Heal ability 5 times', type: 'use_ability', target: 5, current: 0, completed: false }
+      { id: 'use-heal-5', description: 'Use Heal when HP < 50%', type: 'use_ability', target: 5, current: 0, completed: false }
     ]
   },
   {
@@ -1524,7 +1542,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'loops',
     description: 'Repeat actions with for, while, and do-while loops.',
     codeExample: `for (let i = 0; i < 3; i++) {\n  attack();\n}`,
-    unlocksAbilities: ['for-loop'],
+    unlocksAbilities: ['double-tap', 'triple-strike', 'ramping-fury', 'for-loop'],
     unlocksConditions: ['on_kill', 'on_crit'],
     statBonus: { attackSpeed: 0.1 },
     learned: false,
@@ -1532,7 +1550,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     currentXp: 0,
     prerequisites: ['conditionals'],
     learnByDoing: [
-      { id: 'kill-50', description: 'Defeat 50 enemies', type: 'kill_count', target: 50, current: 0, completed: false }
+      { id: 'kill-50', description: 'Defeat 50 enemies total', type: 'kill_count', target: 50, current: 0, completed: false }
     ]
   },
   {
@@ -1541,7 +1559,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'functions',
     description: 'Create reusable blocks of code.',
     codeExample: `function calculateDamage(base, crit) {\n  return crit ? base * 2 : base;\n}`,
-    unlocksAbilities: [],
+    unlocksAbilities: ['percent-slash', 'finishing-blow', 'life-drain', 'console-log'],
     unlocksConditions: ['ability_ready'],
     statBonus: { maxMana: 20 },
     learned: false,
@@ -1558,7 +1576,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'arrays',
     description: 'Store multiple values in ordered lists.',
     codeExample: `const enemies = ['bug', 'error', 'null'];\nconst first = enemies[0];`,
-    unlocksAbilities: [],
+    unlocksAbilities: ['efficient-strike', 'mana-bomb', 'conservation'],
     unlocksConditions: [],
     statBonus: { attack: 10 },
     learned: false,
@@ -1575,7 +1593,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'arrays',
     description: 'Transform arrays with map, filter, and reduce.',
     codeExample: `const doubled = [1, 2, 3].map(x => x * 2);\nconst sum = [1, 2, 3].reduce((a, b) => a + b);`,
-    unlocksAbilities: ['map-attack'],
+    unlocksAbilities: ['map-attack', 'reduce-attack'],
     unlocksConditions: [],
     statBonus: { critDamage: 0.2 },
     learned: false,
@@ -1592,7 +1610,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'objects',
     description: 'Group related data with key-value pairs.',
     codeExample: `const player = {\n  name: "Hero",\n  hp: 100,\n  attack: 15\n};`,
-    unlocksAbilities: [],
+    unlocksAbilities: ['focus', 'berserk', 'calculated-strike'],
     unlocksConditions: [],
     statBonus: { defense: 10 },
     learned: false,
@@ -1609,7 +1627,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'async',
     description: 'Handle asynchronous operations elegantly.',
     codeExample: `async function fetchData() {\n  const response = await fetch(url);\n  return response.json();\n}`,
-    unlocksAbilities: ['async-heal'],
+    unlocksAbilities: ['async-heal', 'promise-chain'],
     unlocksConditions: [],
     statBonus: { attackSpeed: 0.15 },
     learned: false,
@@ -1643,7 +1661,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'react',
     description: 'Add state and effects to functional components.',
     codeExample: `const [count, setCount] = useState(0);\nuseEffect(() => {\n  document.title = count;\n}, [count]);`,
-    unlocksAbilities: ['use-effect'],
+    unlocksAbilities: ['use-effect', 'use-state'],
     unlocksConditions: [],
     statBonus: { critChance: 0.1, critDamage: 0.3 },
     learned: false,
