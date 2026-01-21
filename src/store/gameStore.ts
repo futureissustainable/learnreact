@@ -1286,7 +1286,7 @@ export const useGameStore = create<GameStore>()(
 
         get().addLogEntry({
           type: 'level_up',
-          message: `SKILL LEARNED: ${concept.name}! +${Object.entries(concept.statBonus).map(([k, v]) => `${v} ${k}`).join(', ')}`,
+          message: `SKILL LEARNED: ${concept.name}!`,
           color: '#A855F7'
         });
 
@@ -1333,10 +1333,10 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'codequest-rpg-storage',
-      version: 13,
+      version: 14,
       migrate: (persistedState: unknown, version: number) => {
-        // Force fresh - gold-based skill tree for concepts
-        if (version < 13) {
+        // Force fresh - no passive stat bonuses, learning = active use
+        if (version < 14) {
           return getInitialState();
         }
         return persistedState as GameState;

@@ -1402,11 +1402,13 @@ export function getShopItemPrice(item: Equipment): number {
 }
 
 // ============ JS CONCEPTS - SKILL TREE ============
-// Buy with gold! Better automation → kill stronger mobs → more gold → repeat!
+// Buy with gold! Learning unlocks ABILITIES + SCRIPT FEATURES
+// NO passive stat bonuses - you must USE what you learn to get stronger!
 
 export const JS_CONCEPTS: JsConcept[] = [
   // ============================================================
   // TIER 1: VARIABLES (50g) - First automation!
+  // VALUE: while(true) { attack() } - automates basic farming!
   // ============================================================
   {
     id: 'variables',
@@ -1417,7 +1419,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksAbilities: ['power-strike', 'defend', 'meditate'],
     unlocksFeatures: ['loop_while_true', 'variables_let', 'variables_const', 'action_heal'],
     unlocksConditions: [],
-    statBonus: { attack: 5 },
+    statBonus: {},
     learned: false,
     goldCost: 50,
     prerequisites: []
@@ -1425,6 +1427,7 @@ export const JS_CONCEPTS: JsConcept[] = [
 
   // ============================================================
   // TIER 2: CONDITIONALS (150g) - React to danger!
+  // VALUE: if (hp < 50%) heal() - survive longer, farm more!
   // ============================================================
   {
     id: 'conditionals',
@@ -1435,7 +1438,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksAbilities: ['execute', 'desperate-strike', 'overcharge', 'ternary-strike'],
     unlocksFeatures: ['condition_hp_below', 'condition_hp_above', 'condition_enemy_hp_below', 'condition_mana_above', 'action_power_strike'],
     unlocksConditions: ['hp_below', 'hp_above', 'enemy_hp_below', 'mana_above'],
-    statBonus: { critChance: 0.05 },
+    statBonus: {},
     learned: false,
     goldCost: 150,
     prerequisites: ['variables']
@@ -1443,6 +1446,7 @@ export const JS_CONCEPTS: JsConcept[] = [
 
   // ============================================================
   // TIER 3: OPERATORS (300g) - Combine conditions!
+  // VALUE: if (hp < 50 && mana > 20) heal() - smarter decisions!
   // ============================================================
   {
     id: 'operators',
@@ -1453,7 +1457,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksAbilities: ['boolean-strike', 'combo-condition', 'negation-blast'],
     unlocksFeatures: ['operator_and', 'operator_or', 'operator_not', 'condition_ability_ready', 'action_defend'],
     unlocksConditions: ['ability_ready'],
-    statBonus: { defense: 5, maxMana: 10 },
+    statBonus: {},
     learned: false,
     goldCost: 300,
     prerequisites: ['conditionals']
@@ -1461,6 +1465,7 @@ export const JS_CONCEPTS: JsConcept[] = [
 
   // ============================================================
   // TIER 4: LOOPS (500g) - Multi-hit combos!
+  // VALUE: for loops let you chain attacks, abilities unlock combos!
   // ============================================================
   {
     id: 'loops',
@@ -1471,7 +1476,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksAbilities: ['double-tap', 'triple-strike', 'ramping-fury', 'for-loop'],
     unlocksFeatures: ['loop_for', 'loop_counter', 'loop_break', 'loop_continue', 'action_meditate'],
     unlocksConditions: ['on_kill', 'on_crit'],
-    statBonus: { attackSpeed: 0.1 },
+    statBonus: {},
     learned: false,
     goldCost: 500,
     prerequisites: ['operators']
@@ -1479,6 +1484,7 @@ export const JS_CONCEPTS: JsConcept[] = [
 
   // ============================================================
   // TIER 5: FUNCTIONS (800g) - Reusable code!
+  // VALUE: % damage abilities scale with enemy HP, massive for bosses!
   // ============================================================
   {
     id: 'functions',
@@ -1489,7 +1495,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksAbilities: ['percent-slash', 'finishing-blow', 'life-drain', 'console-log'],
     unlocksFeatures: ['function_define', 'function_params', 'function_return', 'function_arrow', 'math_operations'],
     unlocksConditions: [],
-    statBonus: { maxMana: 20 },
+    statBonus: {},
     learned: false,
     goldCost: 800,
     prerequisites: ['loops']
@@ -1497,6 +1503,7 @@ export const JS_CONCEPTS: JsConcept[] = [
 
   // ============================================================
   // TIER 6: ARRAYS (1200g) - Handle groups!
+  // VALUE: Mana bomb converts all mana to damage, conservation refunds!
   // ============================================================
   {
     id: 'arrays-basics',
@@ -1507,7 +1514,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksAbilities: ['efficient-strike', 'mana-bomb', 'conservation'],
     unlocksFeatures: ['array_length', 'array_foreach', 'array_includes', 'array_find'],
     unlocksConditions: [],
-    statBonus: { attack: 10 },
+    statBonus: {},
     learned: false,
     goldCost: 1200,
     prerequisites: ['functions']
@@ -1515,6 +1522,7 @@ export const JS_CONCEPTS: JsConcept[] = [
 
   // ============================================================
   // TIER 7: OBJECTS (1800g) - Data structures!
+  // VALUE: Berserk mode, read enemy stats for calculated strikes!
   // ============================================================
   {
     id: 'objects',
@@ -1525,7 +1533,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksAbilities: ['focus', 'berserk', 'calculated-strike'],
     unlocksFeatures: ['object_access', 'object_destructure', 'object_spread'],
     unlocksConditions: [],
-    statBonus: { defense: 10 },
+    statBonus: {},
     learned: false,
     goldCost: 1800,
     prerequisites: ['arrays-basics']
@@ -1533,6 +1541,7 @@ export const JS_CONCEPTS: JsConcept[] = [
 
   // ============================================================
   // TIER 8: ARRAY METHODS (2500g) - Transform data!
+  // VALUE: .map() hits ALL enemies, .reduce() scales with fight length!
   // ============================================================
   {
     id: 'arrays-methods',
@@ -1543,7 +1552,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksAbilities: ['map-attack', 'reduce-attack'],
     unlocksFeatures: ['array_filter', 'array_map', 'ternary_operator'],
     unlocksConditions: [],
-    statBonus: { critDamage: 0.2 },
+    statBonus: {},
     learned: false,
     goldCost: 2500,
     prerequisites: ['objects']
@@ -1551,6 +1560,7 @@ export const JS_CONCEPTS: JsConcept[] = [
 
   // ============================================================
   // TIER 9: ASYNC (4000g) - Timing is everything!
+  // VALUE: HoT heals over time, promise chains combo attacks!
   // ============================================================
   {
     id: 'async-basics',
@@ -1561,7 +1571,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksAbilities: ['async-heal', 'promise-chain'],
     unlocksFeatures: ['promise_then', 'async_await', 'setTimeout_setInterval'],
     unlocksConditions: [],
-    statBonus: { attackSpeed: 0.15 },
+    statBonus: {},
     learned: false,
     goldCost: 4000,
     prerequisites: ['arrays-methods']
@@ -1569,6 +1579,7 @@ export const JS_CONCEPTS: JsConcept[] = [
 
   // ============================================================
   // TIER 10: REACT BASICS (6000g) - Components!
+  // VALUE: Component abilities for burst damage + healing combos!
   // ============================================================
   {
     id: 'react-basics',
@@ -1579,7 +1590,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksAbilities: ['component-render', 'props-drill', 'event-handler'],
     unlocksFeatures: ['react_props', 'react_events'],
     unlocksConditions: [],
-    statBonus: { maxHp: 50, attack: 15 },
+    statBonus: {},
     learned: false,
     goldCost: 6000,
     prerequisites: ['async-basics']
@@ -1587,6 +1598,7 @@ export const JS_CONCEPTS: JsConcept[] = [
 
   // ============================================================
   // TIER 11: REACT HOOKS (10000g) - State mastery!
+  // VALUE: useEffect for long buffs, useState for stored damage!
   // ============================================================
   {
     id: 'react-hooks',
@@ -1597,7 +1609,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksAbilities: ['use-effect', 'use-state'],
     unlocksFeatures: ['react_useState', 'react_useEffect'],
     unlocksConditions: [],
-    statBonus: { critChance: 0.1, critDamage: 0.3 },
+    statBonus: {},
     learned: false,
     goldCost: 10000,
     prerequisites: ['react-basics']

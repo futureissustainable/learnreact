@@ -1,7 +1,7 @@
 'use client';
 
 import { useGameStore } from '@/store/gameStore';
-import { CheckCircle, Lock, Coins, Code, TrendUp, Sparkle, Lightning, CaretRight } from '@phosphor-icons/react';
+import { CheckCircle, Lock, Coins, Code, Sparkle, Lightning, CaretRight } from '@phosphor-icons/react';
 
 export function ConceptsPanel() {
   const concepts = useGameStore(s => s.concepts);
@@ -21,14 +21,6 @@ export function ConceptsPanel() {
   ];
 
   const learnedCount = concepts.filter(c => c.learned).length;
-  const totalStatBonus = concepts
-    .filter(c => c.learned)
-    .reduce((acc, c) => {
-      Object.entries(c.statBonus).forEach(([key, val]) => {
-        acc[key] = (acc[key] || 0) + (val as number);
-      });
-      return acc;
-    }, {} as Record<string, number>);
 
   // Get next available concepts to buy
   const availableConcepts = concepts.filter(c => canBuyConcept(c.id));
@@ -44,7 +36,7 @@ export function ConceptsPanel() {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-[#cdd6f4]">Skill Tree</h2>
-              <p className="text-sm text-[#6c7086]">Buy skills with gold to unlock powers</p>
+              <p className="text-sm text-[#6c7086]">Learn to unlock abilities & script features</p>
             </div>
           </div>
           <div className="flex items-center gap-2 px-3 py-2 bg-[#f9e2af]/10 rounded-lg border border-[#f9e2af]/30">
@@ -54,7 +46,7 @@ export function ConceptsPanel() {
         </div>
 
         {/* Progress Bar */}
-        <div className="mb-4">
+        <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-[#6c7086]">Skills Learned</span>
             <span className="text-sm font-medium text-[#cdd6f4]">{learnedCount}/{concepts.length}</span>
@@ -66,23 +58,6 @@ export function ConceptsPanel() {
             />
           </div>
         </div>
-
-        {/* Stat Bonuses */}
-        {Object.keys(totalStatBonus).length > 0 && (
-          <div className="bg-[#181825] rounded-lg p-3 border border-[#313244]">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendUp size={14} className="text-[#a6e3a1]" />
-              <span className="text-xs text-[#a6e3a1] font-medium">TOTAL BONUSES FROM SKILLS</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(totalStatBonus).map(([stat, value]) => (
-                <span key={stat} className="text-xs px-2 py-1 bg-[#a6e3a1]/10 text-[#a6e3a1] rounded">
-                  +{typeof value === 'number' && value < 1 ? `${(value * 100).toFixed(0)}%` : value} {stat}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Available Skills to Buy */}
@@ -131,7 +106,7 @@ export function ConceptsPanel() {
                         <pre className="text-[#89b4fa] whitespace-pre-wrap">{concept.codeExample}</pre>
                       </div>
 
-                      {/* What it unlocks */}
+                      {/* What it unlocks - ACTIVE VALUE, not passive stats! */}
                       <div className="mt-3 flex flex-wrap gap-2">
                         {concept.unlocksAbilities.length > 0 && (
                           <span className="text-xs px-2 py-1 bg-[#f38ba8]/10 text-[#f38ba8] rounded flex items-center gap-1">
@@ -145,11 +120,6 @@ export function ConceptsPanel() {
                             +{concept.unlocksFeatures.length} script features
                           </span>
                         )}
-                        {Object.entries(concept.statBonus).map(([stat, value]) => (
-                          <span key={stat} className="text-xs px-2 py-1 bg-[#a6e3a1]/10 text-[#a6e3a1] rounded">
-                            +{typeof value === 'number' && value < 1 ? `${(value * 100).toFixed(0)}%` : value} {stat}
-                          </span>
-                        ))}
                       </div>
 
                       {/* Buy Button */}
@@ -279,19 +249,19 @@ export function ConceptsPanel() {
 
       {/* How It Works */}
       <div className="bg-[#1e1e2e] rounded-xl p-4 border border-[#313244]">
-        <h3 className="font-medium text-[#cdd6f4] mb-3">How the Skill Tree Works</h3>
+        <h3 className="font-medium text-[#cdd6f4] mb-3">How Learning Works</h3>
         <div className="grid grid-cols-3 gap-3">
           <div className="text-center p-3 bg-[#181825] rounded-lg border border-[#313244]">
             <Coins size={24} className="mx-auto text-[#f9e2af] mb-2" />
             <p className="text-xs text-[#6c7086]">Kill mobs to earn gold</p>
           </div>
           <div className="text-center p-3 bg-[#181825] rounded-lg border border-[#313244]">
-            <Sparkle size={24} className="mx-auto text-[#cba6f7] mb-2" />
-            <p className="text-xs text-[#6c7086]">Buy skills to unlock powers</p>
+            <Lightning size={24} className="mx-auto text-[#f38ba8] mb-2" />
+            <p className="text-xs text-[#6c7086]">Learn to unlock abilities</p>
           </div>
           <div className="text-center p-3 bg-[#181825] rounded-lg border border-[#313244]">
-            <Lightning size={24} className="mx-auto text-[#f38ba8] mb-2" />
-            <p className="text-xs text-[#6c7086]">Better automation = more gold</p>
+            <Code size={24} className="mx-auto text-[#89b4fa] mb-2" />
+            <p className="text-xs text-[#6c7086]">Use them in scripts!</p>
           </div>
         </div>
       </div>
