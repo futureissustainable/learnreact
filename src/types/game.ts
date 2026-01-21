@@ -4,6 +4,10 @@
 
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
+// ============ COMBAT CONSTANTS ============
+
+export const TICKS_PER_SECOND = 20;
+
 // ============ COMBAT STATS ============
 
 export interface CombatStats {
@@ -15,8 +19,24 @@ export interface CombatStats {
   defense: number;
   critChance: number;      // 0-1
   critDamage: number;      // multiplier, e.g., 1.5
-  attackSpeed: number;     // attacks per second
+  attackSpeed: number;     // attacks per second (converted to ticks internally)
   lifeSteal: number;       // 0-1
+}
+
+// ============ NEXT ATTACK MODIFIERS (for ability synergies) ============
+
+export interface NextAttackModifier {
+  id: string;
+  source: string;          // Ability that created this modifier
+  damageMultiplier?: number;   // Multiply next attack damage
+  flatDamage?: number;         // Add flat damage
+  guaranteedCrit?: boolean;    // Force crit
+  lifestealBonus?: number;     // Extra lifesteal for this attack
+  manaRefund?: number;         // Refund mana after attack
+  consumeAllMana?: boolean;    // Use all mana for damage
+  manaMultiplier?: number;     // Multiply mana damage (for mana bomb combo)
+  expireAfterTicks?: number;   // Expire if not used
+  ticksRemaining?: number;     // Countdown
 }
 
 // ============ HERO ============
@@ -47,6 +67,9 @@ export interface Hero {
 
   // Buffs
   activeBuffs: ActiveBuff[];
+
+  // Next attack modifiers (for ability synergies)
+  nextAttackModifiers: NextAttackModifier[];
 }
 
 export interface ActiveBuff {
@@ -68,7 +91,7 @@ export interface Mob {
   maxHp: number;
   attack: number;
   defense: number;
-  attackSpeed: number;
+  attackSpeedTicks: number;  // Ticks between attacks (lower = faster)
 
   // Rewards
   xpReward: number;
@@ -81,7 +104,17 @@ export interface Mob {
   isBoss?: boolean;
 
   // Combat state
-  attackCooldown: number;
+  attackCooldownTicks: number;  // Current ticks until next attack
+
+  // Debuffs
+  debuffs?: MobDebuff[];
+}
+
+export interface MobDebuff {
+  id: string;
+  type: 'armor_shred' | 'slow' | 'dot' | 'marked';
+  value: number;
+  remainingTicks: number;
 }
 
 export interface LootDrop {
@@ -188,12 +221,13 @@ export interface Ability {
   name: string;
   description: string;
   manaCost: number;
-  cooldown: number;
-  currentCooldown: number;
+  cooldownTicks: number;       // Cooldown in ticks (20 ticks = 1 second)
+  currentCooldownTicks: number; // Current cooldown remaining in ticks
   effect: AbilityEffect;
   unlocked: boolean;
   requiredConcept?: string;
   emoji: string;
+  tier?: number;               // For power scaling
 }
 
 export type AbilityEffect =
@@ -258,7 +292,40 @@ export type AbilityEffect =
   | { type: 'promise_chain'; actions: string[] }                           // Sequential actions
 
   // React concepts
-  | { type: 'stored_damage'; baseDamage: number; canStack: boolean };      // useState pattern
+  | { type: 'stored_damage'; baseDamage: number; canStack: boolean }      // useState pattern
+
+  // ============ SYNERGY / SETUP ABILITIES ============
+  // These modify the NEXT attack for powerful combos
+
+  // Seppuku: Hurt yourself, empower next attack
+  | { type: 'self_damage_empower'; selfDamagePercent: number; nextAttackBonus: number }
+
+  // Mana Overload: Double mana for next attack only
+  | { type: 'mana_overload'; manaMultiplier: number; expireTicks: number }
+
+  // Focus: Next attack guaranteed crit + bonus damage
+  | { type: 'focus_strike'; critBonus: number; damageBonus: number; expireTicks: number }
+
+  // Charge: Build up damage over ticks, release on next attack
+  | { type: 'charge_attack'; damagePerTick: number; maxTicks: number }
+
+  // Weaken: Reduce enemy defense, next attack does more
+  | { type: 'armor_shred'; defenseReduction: number; durationTicks: number }
+
+  // Blood Pact: Sacrifice HP for massive next attack
+  | { type: 'blood_pact'; hpCostPercent: number; damageMultiplier: number; expireTicks: number }
+
+  // Combo Finisher: Deals more damage based on abilities used this combat
+  | { type: 'combo_finisher'; baseDamage: number; bonusPerAbility: number }
+
+  // Chain Lightning: Damage + bonus if enemy was hit recently
+  | { type: 'chain_damage'; baseDamage: number; chainBonus: number; chainWindowTicks: number }
+
+  // Vampiric Setup: Next attack heals for % of damage
+  | { type: 'vampiric_touch'; lifestealBonus: number; expireTicks: number }
+
+  // Execute Setup: Lower enemy HP below threshold, then execute
+  | { type: 'crippling_blow'; damagePercent: number; applyDebuff: string };
 
 // ============ AUTOMATION SCRIPTS ============
 
@@ -324,7 +391,7 @@ export interface MobTemplate {
   baseHp: number;
   baseAttack: number;
   baseDefense: number;
-  attackSpeed: number;
+  baseAttackTicks: number;  // Base ticks between attacks (20 = 1 attack/sec)
   xpMultiplier: number;
   goldMultiplier: number;
   lootTable: LootDrop[];
@@ -379,6 +446,11 @@ export interface GameState {
   isAutoBattling: boolean;
   isPaused: boolean;
 
+  // Tick system (20 ticks per second)
+  currentTick: number;           // Global tick counter
+  tickAccumulator: number;       // For smooth tick processing
+  abilitiesUsedThisCombat: number; // For combo finisher
+
   // Stats
   killCount: number;
   sessionKills: number;
@@ -387,6 +459,7 @@ export interface GameState {
   totalGoldEarned: number;
   totalXpEarned: number;
   bossesDefeated: string[];
+  lastHitTick: number;           // For chain damage tracking
 
   // Progression
   zones: Zone[];
@@ -419,7 +492,7 @@ export function calculateXpForLevel(level: number): number {
   return Math.floor(100 * Math.pow(1.5, level - 1));
 }
 
-export function calculateMobStats(template: MobTemplate, zoneLevel: number): Omit<Mob, 'instanceId' | 'attackCooldown'> {
+export function calculateMobStats(template: MobTemplate, zoneLevel: number): Omit<Mob, 'instanceId' | 'attackCooldownTicks'> {
   const levelMod = Math.pow(1.12, zoneLevel - 1);
 
   // Gold scales EXPONENTIALLY to match item price progression
@@ -429,6 +502,11 @@ export function calculateMobStats(template: MobTemplate, zoneLevel: number): Omi
   // Zone 4 (lvl 15): ~700g per kill → Tier 8-9 items (2k-5k) in 3-7 kills
   // Zone 5 (lvl 20): ~3500g per kill → Tier 10-12 items (5k-15k) in 2-5 kills
   const goldScaling = Math.pow(1.35, zoneLevel - 1); // ~1.35x per level = matches item prices
+
+  // Attack speed gets FASTER in later zones (fewer ticks between attacks)
+  // Zone 1: base attack ticks
+  // Zone 5: much faster attacks (minimum 1 tick for fastest mobs)
+  const speedScaling = Math.max(1, template.baseAttackTicks - (zoneLevel - 1) * 2);
 
   return {
     id: template.id,
@@ -440,11 +518,12 @@ export function calculateMobStats(template: MobTemplate, zoneLevel: number): Omi
     maxHp: Math.floor(template.baseHp * levelMod),
     attack: Math.floor(template.baseAttack * levelMod),
     defense: Math.floor(template.baseDefense * levelMod),
-    attackSpeed: template.attackSpeed,
+    attackSpeedTicks: speedScaling,  // Ticks between attacks (lower = faster)
     xpReward: Math.floor(10 * zoneLevel * template.xpMultiplier),
     goldReward: Math.floor(8 * goldScaling * template.goldMultiplier),
     lootTable: template.lootTable,
-    isBoss: template.isBoss
+    isBoss: template.isBoss,
+    debuffs: []
   };
 }
 

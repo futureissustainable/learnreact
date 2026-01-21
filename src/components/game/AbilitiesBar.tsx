@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { Lightning, Lock, Drop } from '@phosphor-icons/react';
+import { TICKS_PER_SECOND } from '@/types/game';
 
 export function AbilitiesBar() {
   const hero = useGameStore(s => s.hero);
@@ -24,10 +25,14 @@ export function AbilitiesBar() {
 
       <div className="flex flex-wrap gap-2">
         {unlockedAbilities.map(ability => {
-          const onCooldown = ability.currentCooldown > 0;
+          // Tick-based cooldowns
+          const currentCooldownTicks = ability.currentCooldownTicks || 0;
+          const cooldownTicks = ability.cooldownTicks || 20;
+          const onCooldown = currentCooldownTicks > 0;
           const noMana = hero.stats.mana < ability.manaCost;
           const disabled = onCooldown || noMana;
-          const cooldownPercent = onCooldown ? (ability.currentCooldown / ability.cooldown) * 100 : 0;
+          const cooldownPercent = onCooldown ? (currentCooldownTicks / cooldownTicks) * 100 : 0;
+          const cooldownSeconds = currentCooldownTicks / TICKS_PER_SECOND;
 
           return (
             <div key={ability.id} className="relative">
@@ -57,7 +62,7 @@ export function AbilitiesBar() {
 
                 {onCooldown && (
                   <span className="text-[10px] text-[#cdd6f4] relative z-10">
-                    {ability.currentCooldown.toFixed(1)}s
+                    {cooldownSeconds.toFixed(1)}s
                   </span>
                 )}
               </button>
@@ -69,7 +74,7 @@ export function AbilitiesBar() {
                   <div className="text-xs text-[#6c7086] mt-1">{ability.description}</div>
                   <div className="flex items-center gap-2 mt-2 text-xs text-[#6c7086]">
                     <span className="text-[#89b4fa]">{ability.manaCost} mana</span>
-                    <span>{ability.cooldown}s cd</span>
+                    <span>{(cooldownTicks / TICKS_PER_SECOND).toFixed(1)}s cd</span>
                   </div>
                 </div>
               )}

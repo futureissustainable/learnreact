@@ -13,6 +13,8 @@ import {
   Zone,
   JsConcept,
   CombatLogEntry,
+  NextAttackModifier,
+  TICKS_PER_SECOND,
   calculateXpForLevel,
   calculateDamage,
   calculateMobStats,
@@ -51,7 +53,8 @@ const createInitialHero = (name: string): Hero => {
     },
     abilities: ABILITIES.filter(a => a.unlocked).map(a => ({ ...a })),
     scripts: DEFAULT_SCRIPTS.map(s => ({ ...s })),
-    activeBuffs: []
+    activeBuffs: [],
+    nextAttackModifiers: []  // For ability synergies
   };
 };
 
@@ -63,6 +66,12 @@ const getInitialState = (): GameState => ({
   combatLog: [],
   isAutoBattling: false,
   isPaused: false,
+  // Tick system
+  currentTick: 0,
+  tickAccumulator: 0,
+  abilitiesUsedThisCombat: 0,
+  lastHitTick: 0,
+  // Stats
   killCount: 0,
   sessionKills: 0,
   totalDamageDealt: 0,
@@ -189,75 +198,132 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         if (state.isPaused) return;
 
-        const adjustedDelta = deltaTime * state.combatSpeed;
+        // Convert real time to game ticks (20 ticks per second)
+        // deltaTime is in seconds, so: ticks = deltaTime * 20 * combatSpeed
+        const ticksToProcess = deltaTime * TICKS_PER_SECOND * state.combatSpeed;
+        const newAccumulator = state.tickAccumulator + ticksToProcess;
+        const wholeTicks = Math.floor(newAccumulator);
+        const remainingAccumulator = newAccumulator - wholeTicks;
+
+        if (wholeTicks === 0) {
+          set({ tickAccumulator: remainingAccumulator });
+          return;
+        }
+
         const inCombat = state.currentZone && state.currentMobs.length > 0;
 
-        // ============================================
-        // ALWAYS TICK: Mana regen, cooldowns, buffs
-        // ============================================
-        // Mana regenerates faster in combat (2/s), slower out of combat (1/s)
-        const manaRegenRate = inCombat ? 2 : 1;
+        // Process each tick
+        for (let i = 0; i < wholeTicks; i++) {
+          const currentState = get();
 
-        set(s => ({
-          hero: {
-            ...s.hero,
-            abilities: s.hero.abilities.map(ability => ({
-              ...ability,
-              currentCooldown: Math.max(0, ability.currentCooldown - adjustedDelta)
-            })),
-            activeBuffs: s.hero.activeBuffs
-              .map(buff => ({
-                ...buff,
-                remainingDuration: buff.remainingDuration - adjustedDelta
+          // ============================================
+          // TICK: Ability cooldowns (tick-based)
+          // ============================================
+          set(s => ({
+            hero: {
+              ...s.hero,
+              abilities: s.hero.abilities.map(ability => ({
+                ...ability,
+                currentCooldownTicks: Math.max(0, (ability.currentCooldownTicks || 0) - 1)
+              })),
+              // Decay next attack modifiers
+              nextAttackModifiers: (s.hero.nextAttackModifiers || [])
+                .map(mod => ({
+                  ...mod,
+                  ticksRemaining: (mod.ticksRemaining || mod.expireAfterTicks || 0) - 1
+                }))
+                .filter(mod => (mod.ticksRemaining ?? 0) > 0)
+            },
+            currentTick: s.currentTick + 1
+          }));
+
+          // ============================================
+          // TICK: Mana regen (1 mana per 10 ticks = 2/sec)
+          // ============================================
+          if (currentState.currentTick % 10 === 0) {
+            set(s => ({
+              hero: {
+                ...s.hero,
+                stats: {
+                  ...s.hero.stats,
+                  mana: Math.min(s.hero.stats.maxMana, s.hero.stats.mana + 1)
+                }
+              }
+            }));
+          }
+
+          // ============================================
+          // TICK: Buff duration (convert to ticks for display, keep seconds internally for now)
+          // ============================================
+          if (currentState.currentTick % TICKS_PER_SECOND === 0) {
+            set(s => ({
+              hero: {
+                ...s.hero,
+                activeBuffs: s.hero.activeBuffs
+                  .map(buff => ({
+                    ...buff,
+                    remainingDuration: buff.remainingDuration - 1
+                  }))
+                  .filter(buff => buff.remainingDuration > 0)
+              }
+            }));
+            // Recalculate stats with buffs each second
+            get().recalculateStats();
+          }
+
+          // ============================================
+          // IN COMBAT: Mob attacks (tick-based)
+          // ============================================
+          if (inCombat) {
+            const currentMobs = get().currentMobs;
+            currentMobs.forEach(mob => {
+              const newCooldown = (mob.attackCooldownTicks || mob.attackSpeedTicks) - 1;
+              if (newCooldown <= 0) {
+                // Mob attacks!
+                set(s => ({
+                  currentMobs: s.currentMobs.map(m =>
+                    m.instanceId === mob.instanceId
+                      ? { ...m, attackCooldownTicks: m.attackSpeedTicks }
+                      : m
+                  )
+                }));
+                get().mobAttack(mob);
+              } else {
+                set(s => ({
+                  currentMobs: s.currentMobs.map(m =>
+                    m.instanceId === mob.instanceId
+                      ? { ...m, attackCooldownTicks: newCooldown }
+                      : m
+                  )
+                }));
+              }
+            });
+
+            // Process mob debuffs (armor shred, etc.)
+            set(s => ({
+              currentMobs: s.currentMobs.map(mob => ({
+                ...mob,
+                debuffs: (mob.debuffs || [])
+                  .map(d => ({ ...d, remainingTicks: d.remainingTicks - 1 }))
+                  .filter(d => d.remainingTicks > 0)
               }))
-              .filter(buff => buff.remainingDuration > 0),
-            stats: {
-              ...s.hero.stats,
-              mana: Math.min(s.hero.stats.maxMana, s.hero.stats.mana + adjustedDelta * manaRegenRate)
-            }
-          },
+            }));
+          }
+
+          // ============================================
+          // AUTO-BATTLE: Evaluate scripts every tick
+          // ============================================
+          if (get().isAutoBattling) {
+            get().evaluateScripts();
+          }
+        }
+
+        // Update time tracking
+        set(s => ({
+          tickAccumulator: remainingAccumulator,
           lastTick: Date.now(),
           totalPlayTime: s.totalPlayTime + deltaTime
         }));
-
-        // Recalculate stats with buffs
-        get().recalculateStats();
-
-        // ============================================
-        // IN COMBAT: Mob attacks (regardless of auto-battle)
-        // ============================================
-        if (inCombat) {
-          const currentMobs = get().currentMobs;
-          currentMobs.forEach(mob => {
-            const newCooldown = mob.attackCooldown - adjustedDelta;
-            if (newCooldown <= 0) {
-              // Update cooldown first, then attack
-              set(s => ({
-                currentMobs: s.currentMobs.map(m =>
-                  m.instanceId === mob.instanceId
-                    ? { ...m, attackCooldown: 1 / m.attackSpeed }
-                    : m
-                )
-              }));
-              get().mobAttack(mob);
-            } else {
-              set(s => ({
-                currentMobs: s.currentMobs.map(m =>
-                  m.instanceId === mob.instanceId
-                    ? { ...m, attackCooldown: newCooldown }
-                    : m
-                )
-              }));
-            }
-          });
-        }
-
-        // ============================================
-        // AUTO-BATTLE ONLY: Evaluate automation scripts
-        // ============================================
-        if (state.isAutoBattling) {
-          get().evaluateScripts();
-        }
       },
 
       spawnMob: () => {
@@ -282,10 +348,14 @@ export const useGameStore = create<GameStore>()(
         const newMob: Mob = {
           ...mobStats,
           instanceId: generateInstanceId(),
-          attackCooldown: 1 / template.attackSpeed
+          attackCooldownTicks: mobStats.attackSpeedTicks  // Start with full cooldown
         };
 
-        set({ currentMobs: [...state.currentMobs, newMob] });
+        // Reset abilities used counter for new combat
+        set({
+          currentMobs: [...state.currentMobs, newMob],
+          abilitiesUsedThisCombat: 0
+        });
       },
 
       playerAttack: () => {
@@ -293,19 +363,83 @@ export const useGameStore = create<GameStore>()(
         if (state.currentMobs.length === 0) return;
 
         const target = state.currentMobs[0];
-        const { damage, isCrit } = calculateDamage(
+        const modifiers = state.hero.nextAttackModifiers || [];
+
+        // Calculate base damage
+        let { damage, isCrit } = calculateDamage(
           state.hero.stats.attack,
           target.defense,
           state.hero.stats.critChance,
           state.hero.stats.critDamage
         );
 
-        // Apply damage
+        // Apply next attack modifiers from synergy abilities
+        let bonusLifesteal = 0;
+        let manaMultiplier = 1;
+        let consumeAllMana = false;
+
+        for (const mod of modifiers) {
+          if (mod.guaranteedCrit && !isCrit) {
+            isCrit = true;
+            damage = damage * state.hero.stats.critDamage;
+          }
+          if (mod.damageMultiplier) {
+            damage = Math.floor(damage * mod.damageMultiplier);
+          }
+          if (mod.flatDamage) {
+            damage += mod.flatDamage;
+          }
+          if (mod.lifestealBonus) {
+            bonusLifesteal += mod.lifestealBonus;
+          }
+          if (mod.manaMultiplier) {
+            manaMultiplier = mod.manaMultiplier;
+          }
+          if (mod.consumeAllMana) {
+            consumeAllMana = true;
+          }
+        }
+
+        // Apply mana consumption if modifier set it
+        if (consumeAllMana) {
+          const manaDamage = Math.floor(state.hero.stats.mana * 5 * manaMultiplier);
+          damage += manaDamage;
+          set(s => ({
+            hero: {
+              ...s.hero,
+              stats: { ...s.hero.stats, mana: 0 }
+            }
+          }));
+        }
+
+        // Clear modifiers after use
+        set(s => ({
+          hero: {
+            ...s.hero,
+            nextAttackModifiers: []
+          },
+          lastHitTick: s.currentTick
+        }));
+
+        // Apply damage with debuffs considered
+        const armorShred = (target.debuffs || []).find(d => d.type === 'armor_shred');
+        const effectiveDefense = armorShred
+          ? target.defense * (1 - armorShred.value)
+          : target.defense;
+
+        // Recalculate with effective defense if armor shred active
+        if (armorShred) {
+          const reduction = effectiveDefense / (effectiveDefense + 50);
+          damage = Math.floor(Math.max(1, state.hero.stats.attack * (1 - reduction)));
+          if (isCrit) damage = Math.floor(damage * state.hero.stats.critDamage);
+        }
+
         const newHp = target.hp - damage;
 
-        // Lifesteal
-        if (state.hero.stats.lifeSteal > 0) {
-          const healAmount = Math.floor(damage * state.hero.stats.lifeSteal);
+        // Lifesteal (base + bonus from modifiers)
+        const totalLifesteal = state.hero.stats.lifeSteal + bonusLifesteal;
+        if (totalLifesteal > 0) {
+          const healAmount = Math.floor(damage * totalLifesteal);
           set(s => ({
             hero: {
               ...s.hero,
@@ -317,11 +451,13 @@ export const useGameStore = create<GameStore>()(
           }));
         }
 
-        // Log - only crits and kills to reduce spam
-        if (isCrit) {
+        // Log - only crits and significant hits
+        if (isCrit || damage > state.hero.stats.attack * 2) {
           get().addLogEntry({
             type: 'player_crit',
-            message: `💥 CRIT! ${damage} damage to ${target.name}!`,
+            message: isCrit
+              ? `💥 CRIT! ${damage} damage to ${target.name}!`
+              : `💥 ${damage} damage to ${target.name}!`,
             value: damage,
             color: '#F59E0B'
           });
@@ -410,14 +546,15 @@ export const useGameStore = create<GameStore>()(
         if (abilityIndex === -1) return;
 
         const ability = state.hero.abilities[abilityIndex];
-        if (ability.currentCooldown > 0) return;
+        // Use tick-based cooldowns
+        if ((ability.currentCooldownTicks || 0) > 0) return;
         if (state.hero.stats.mana < ability.manaCost) return;
 
-        // Deduct mana and start cooldown
+        // Deduct mana and start cooldown (tick-based)
         const updatedAbilities = [...state.hero.abilities];
         updatedAbilities[abilityIndex] = {
           ...ability,
-          currentCooldown: ability.cooldown
+          currentCooldownTicks: ability.cooldownTicks || 20  // Default 1 second if not specified
         };
 
         set(s => ({
@@ -428,7 +565,8 @@ export const useGameStore = create<GameStore>()(
               mana: Math.max(0, s.hero.stats.mana - ability.manaCost)
             },
             abilities: updatedAbilities
-          }
+          },
+          abilitiesUsedThisCombat: s.abilitiesUsedThisCombat + 1
         }));
 
         // Apply effect
@@ -714,6 +852,204 @@ export const useGameStore = create<GameStore>()(
           }
         }
 
+        // ============================================================
+        // SYNERGY ABILITIES - Setup effects for next attack
+        // ============================================================
+
+        // === SELF DAMAGE EMPOWER (Seppuku) ===
+        else if (effect.type === 'self_damage_empower') {
+          const selfDamage = Math.floor(hero.stats.maxHp * effect.selfDamagePercent);
+          const newHp = Math.max(1, hero.stats.hp - selfDamage);
+          set(s => ({
+            hero: {
+              ...s.hero,
+              stats: { ...s.hero.stats, hp: newHp },
+              nextAttackModifiers: [
+                ...(s.hero.nextAttackModifiers || []),
+                {
+                  id: `seppuku-${Date.now()}`,
+                  source: 'seppuku',
+                  damageMultiplier: 1 + effect.nextAttackBonus,
+                  expireAfterTicks: 60,
+                  ticksRemaining: 60
+                }
+              ]
+            }
+          }));
+          get().addLogEntry({
+            type: 'ability',
+            message: `${ability.emoji} Seppuku! -${selfDamage} HP, next attack +${Math.floor(effect.nextAttackBonus * 100)}%!`,
+            color: '#DC2626'
+          });
+        }
+
+        // === MANA OVERLOAD (double mana for next attack) ===
+        else if (effect.type === 'mana_overload') {
+          set(s => ({
+            hero: {
+              ...s.hero,
+              nextAttackModifiers: [
+                ...(s.hero.nextAttackModifiers || []),
+                {
+                  id: `mana-overload-${Date.now()}`,
+                  source: 'mana-overload',
+                  manaMultiplier: effect.manaMultiplier,
+                  consumeAllMana: true,
+                  expireAfterTicks: effect.expireTicks,
+                  ticksRemaining: effect.expireTicks
+                }
+              ]
+            }
+          }));
+          get().addLogEntry({
+            type: 'ability',
+            message: `${ability.emoji} Mana Overload! Next mana attack deals ${effect.manaMultiplier}x damage!`,
+            color: '#A855F7'
+          });
+        }
+
+        // === FOCUS STRIKE (guaranteed crit + bonus damage) ===
+        else if (effect.type === 'focus_strike') {
+          set(s => ({
+            hero: {
+              ...s.hero,
+              nextAttackModifiers: [
+                ...(s.hero.nextAttackModifiers || []),
+                {
+                  id: `focus-${Date.now()}`,
+                  source: 'focus',
+                  guaranteedCrit: effect.critBonus > 0,
+                  damageMultiplier: 1 + effect.damageBonus,
+                  expireAfterTicks: effect.expireTicks,
+                  ticksRemaining: effect.expireTicks
+                }
+              ]
+            }
+          }));
+          const critMsg = effect.critBonus > 0 ? 'CRIT + ' : '';
+          get().addLogEntry({
+            type: 'ability',
+            message: `${ability.emoji} Focus! Next attack: ${critMsg}+${Math.floor(effect.damageBonus * 100)}% damage!`,
+            color: '#6366F1'
+          });
+        }
+
+        // === ARMOR SHRED (debuff enemy) ===
+        else if (effect.type === 'armor_shred') {
+          if (target) {
+            set(s => ({
+              currentMobs: s.currentMobs.map(m =>
+                m.instanceId === target.instanceId
+                  ? {
+                      ...m,
+                      debuffs: [
+                        ...(m.debuffs || []),
+                        {
+                          id: `armor-shred-${Date.now()}`,
+                          type: 'armor_shred' as const,
+                          value: effect.defenseReduction,
+                          remainingTicks: effect.durationTicks
+                        }
+                      ]
+                    }
+                  : m
+              )
+            }));
+            get().addLogEntry({
+              type: 'ability',
+              message: `${ability.emoji} Crippling Blow! ${target.name} armor -${Math.floor(effect.defenseReduction * 100)}%!`,
+              color: '#F59E0B'
+            });
+          }
+        }
+
+        // === VAMPIRIC TOUCH (lifesteal on next attack) ===
+        else if (effect.type === 'vampiric_touch') {
+          set(s => ({
+            hero: {
+              ...s.hero,
+              nextAttackModifiers: [
+                ...(s.hero.nextAttackModifiers || []),
+                {
+                  id: `vamp-${Date.now()}`,
+                  source: 'vampiric-touch',
+                  lifestealBonus: effect.lifestealBonus,
+                  expireAfterTicks: effect.expireTicks,
+                  ticksRemaining: effect.expireTicks
+                }
+              ]
+            }
+          }));
+          get().addLogEntry({
+            type: 'ability',
+            message: `${ability.emoji} Vampiric Touch! Next attack heals ${Math.floor(effect.lifestealBonus * 100)}% of damage!`,
+            color: '#A855F7'
+          });
+        }
+
+        // === BLOOD PACT (big self-damage for huge next attack) ===
+        else if (effect.type === 'blood_pact') {
+          const selfDamage = Math.floor(hero.stats.hp * effect.hpCostPercent);
+          const newHp = Math.max(1, hero.stats.hp - selfDamage);
+          set(s => ({
+            hero: {
+              ...s.hero,
+              stats: { ...s.hero.stats, hp: newHp },
+              nextAttackModifiers: [
+                ...(s.hero.nextAttackModifiers || []),
+                {
+                  id: `blood-pact-${Date.now()}`,
+                  source: 'blood-pact',
+                  damageMultiplier: effect.damageMultiplier,
+                  expireAfterTicks: effect.expireTicks,
+                  ticksRemaining: effect.expireTicks
+                }
+              ]
+            }
+          }));
+          get().addLogEntry({
+            type: 'ability',
+            message: `${ability.emoji} BLOOD PACT! -${selfDamage} HP, next attack x${effect.damageMultiplier}!`,
+            color: '#DC2626'
+          });
+        }
+
+        // === RAMPING (stacking damage) ===
+        else if (effect.type === 'ramping') {
+          if (target) {
+            // Track ramp stacks in a simple way - use ability usage count as proxy
+            const stacks = state.abilitiesUsedThisCombat;
+            const scaling = effect.baseScaling + (stacks * effect.rampPerUse);
+            const damage = hero.stats.attack * scaling;
+            applyDamage(damage, target, `${ability.emoji} Stack ${stacks}! ${Math.floor(damage)} damage (${Math.floor(scaling * 100)}%)!`, '#F472B6');
+          }
+        }
+
+        // === BERSERK (attack speed + defense reduction) ===
+        else if (effect.type === 'berserk') {
+          set(s => ({
+            hero: {
+              ...s.hero,
+              activeBuffs: [
+                ...s.hero.activeBuffs,
+                {
+                  id: `berserk-atk-${Date.now()}`,
+                  stat: 'attackSpeed' as keyof CombatStats,
+                  value: effect.attackSpeedBonus,
+                  remainingDuration: effect.duration,
+                  maxDuration: effect.duration
+                }
+              ]
+            }
+          }));
+          // Defense reduction is handled in recalculateStats
+          get().addLogEntry({
+            type: 'buff',
+            message: `${ability.emoji} BERSERK! +${Math.floor(effect.attackSpeedBonus * 100)}% ATK SPD, -${Math.floor(effect.defenseReduction * 100)}% DEF!`,
+            color: '#EF4444'
+          });
+        }
+
       },
 
       killMob: (mobInstanceId) => {
@@ -873,7 +1209,7 @@ export const useGameStore = create<GameStore>()(
             case 'ability_ready':
               const abilityCondition = script.condition as { type: 'ability_ready'; abilityId: string };
               const ability = hero.abilities.find(a => a.id === abilityCondition.abilityId);
-              conditionMet = ability ? ability.currentCooldown <= 0 && hero.stats.mana >= ability.manaCost : false;
+              conditionMet = ability ? (ability.currentCooldownTicks || 0) <= 0 && hero.stats.mana >= ability.manaCost : false;
               break;
             case 'on_kill':
             case 'on_crit':
@@ -1038,10 +1374,10 @@ export const useGameStore = create<GameStore>()(
         const boss: Mob = {
           ...bossStats,
           instanceId: generateInstanceId(),
-          attackCooldown: 1 / bossTemplate.attackSpeed
+          attackCooldownTicks: bossStats.attackSpeedTicks  // Tick-based cooldown
         };
 
-        set({ currentMobs: [boss] });
+        set({ currentMobs: [boss], abilitiesUsedThisCombat: 0 });
 
         get().addLogEntry({
           type: 'zone',
@@ -1333,10 +1669,11 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'codequest-rpg-storage',
-      version: 14,
+      version: 15,
       migrate: (persistedState: unknown, version: number) => {
-        // Force fresh - no passive stat bonuses, learning = active use
-        if (version < 14) {
+        // Version 15: Tick-based combat, ability synergies, power scaling
+        // Force fresh start to experience the new system
+        if (version < 15) {
           return getInitialState();
         }
         return persistedState as GameState;

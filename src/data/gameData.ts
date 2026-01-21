@@ -1,9 +1,11 @@
 import { Zone, MobTemplate, Equipment, Ability, JsConcept, AutoScript, Rarity } from '@/types/game';
 
 // ============ MOB TEMPLATES ============
+// baseAttackTicks: ticks between attacks (20 = 1 attack/sec, 10 = 2/sec, 1 = 20/sec)
+// Later zones have FASTER enemies (lower ticks), requiring better automation
 
 export const MOB_TEMPLATES: Record<string, MobTemplate> = {
-  // Zone 1: Syntax Woods
+  // Zone 1: Syntax Woods (slow enemies, 25-40 ticks = 0.5-0.8 attacks/sec)
   'bug': {
     id: 'bug',
     name: 'Syntax Bug',
@@ -12,7 +14,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     baseHp: 30,
     baseAttack: 5,
     baseDefense: 2,
-    attackSpeed: 0.8,
+    baseAttackTicks: 40,  // 0.5 attacks/sec - very slow, forgiving
     xpMultiplier: 1,
     goldMultiplier: 1,
     lootTable: [{ itemId: 'wooden-sword', chance: 0.05 }],
@@ -26,7 +28,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     baseHp: 45,
     baseAttack: 8,
     baseDefense: 3,
-    attackSpeed: 0.6,
+    baseAttackTicks: 35,  // ~0.57 attacks/sec
     xpMultiplier: 1.3,
     goldMultiplier: 1.2,
     lootTable: [{ itemId: 'leather-armor', chance: 0.04 }],
@@ -40,7 +42,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     baseHp: 60,
     baseAttack: 12,
     baseDefense: 5,
-    attackSpeed: 0.5,
+    baseAttackTicks: 30,  // ~0.67 attacks/sec
     xpMultiplier: 1.8,
     goldMultiplier: 1.5,
     lootTable: [{ itemId: 'iron-sword', chance: 0.08 }],
@@ -54,7 +56,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     baseHp: 500,
     baseAttack: 25,
     baseDefense: 15,
-    attackSpeed: 0.4,
+    baseAttackTicks: 25,  // 0.8 attacks/sec - boss hits harder
     xpMultiplier: 10,
     goldMultiplier: 20,
     lootTable: [{ itemId: 'variable-blade', chance: 0.5 }],
@@ -62,7 +64,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     isBoss: true
   },
 
-  // Zone 2: Loop Caverns
+  // Zone 2: Loop Caverns (medium speed, 18-30 ticks = 0.67-1.1 attacks/sec)
   'infinite-loop': {
     id: 'infinite-loop',
     name: 'Infinite Loop',
@@ -71,7 +73,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     baseHp: 80,
     baseAttack: 15,
     baseDefense: 8,
-    attackSpeed: 1.2,
+    baseAttackTicks: 18,  // 1.1 attacks/sec - getting faster!
     xpMultiplier: 1.5,
     goldMultiplier: 1.3,
     lootTable: [{ itemId: 'steel-sword', chance: 0.05 }],
@@ -85,7 +87,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     baseHp: 120,
     baseAttack: 20,
     baseDefense: 12,
-    attackSpeed: 0.7,
+    baseAttackTicks: 25,  // 0.8 attacks/sec
     xpMultiplier: 2,
     goldMultiplier: 1.8,
     lootTable: [{ itemId: 'chainmail', chance: 0.06 }],
@@ -99,7 +101,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     baseHp: 150,
     baseAttack: 25,
     baseDefense: 10,
-    attackSpeed: 0.9,
+    baseAttackTicks: 20,  // 1 attack/sec
     xpMultiplier: 2.5,
     goldMultiplier: 2,
     lootTable: [{ itemId: 'loop-ring', chance: 0.08 }],
@@ -113,7 +115,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     baseHp: 1200,
     baseAttack: 45,
     baseDefense: 25,
-    attackSpeed: 0.5,
+    baseAttackTicks: 15,  // 1.33 attacks/sec - dangerous!
     xpMultiplier: 15,
     goldMultiplier: 30,
     lootTable: [{ itemId: 'iterator-blade', chance: 0.6 }],
@@ -121,7 +123,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     isBoss: true
   },
 
-  // Zone 3: Array Mountains
+  // Zone 3: Array Mountains (fast, 12-20 ticks = 1-1.67 attacks/sec)
   'off-by-one': {
     id: 'off-by-one',
     name: 'Off-by-One',
@@ -130,7 +132,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     baseHp: 100,
     baseAttack: 22,
     baseDefense: 15,
-    attackSpeed: 1.0,
+    baseAttackTicks: 15,  // 1.33 attacks/sec
     xpMultiplier: 2,
     goldMultiplier: 1.5,
     lootTable: [{ itemId: 'array-gauntlets', chance: 0.05 }],
@@ -144,7 +146,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     baseHp: 180,
     baseAttack: 30,
     baseDefense: 20,
-    attackSpeed: 0.6,
+    baseAttackTicks: 18,  // 1.1 attacks/sec
     xpMultiplier: 2.5,
     goldMultiplier: 2,
     lootTable: [{ itemId: 'filter-amulet', chance: 0.06 }],
@@ -158,7 +160,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     baseHp: 2500,
     baseAttack: 60,
     baseDefense: 40,
-    attackSpeed: 0.6,
+    baseAttackTicks: 10,  // 2 attacks/sec - very dangerous!
     xpMultiplier: 25,
     goldMultiplier: 50,
     lootTable: [{ itemId: 'reduce-scepter', chance: 0.7 }],
@@ -166,7 +168,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     isBoss: true
   },
 
-  // Zone 4: Async Void
+  // Zone 4: Async Void (very fast, 6-12 ticks = 1.67-3.33 attacks/sec)
   'callback-hell': {
     id: 'callback-hell',
     name: 'Callback Demon',
@@ -175,7 +177,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     baseHp: 200,
     baseAttack: 35,
     baseDefense: 25,
-    attackSpeed: 0.8,
+    baseAttackTicks: 10,  // 2 attacks/sec
     xpMultiplier: 3,
     goldMultiplier: 2.5,
     lootTable: [{ itemId: 'async-boots', chance: 0.05 }],
@@ -189,7 +191,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     baseHp: 150,
     baseAttack: 50,
     baseDefense: 15,
-    attackSpeed: 1.5,
+    baseAttackTicks: 6,   // 3.33 attacks/sec - FAST!
     xpMultiplier: 3.5,
     goldMultiplier: 3,
     lootTable: [{ itemId: 'promise-ring', chance: 0.07 }],
@@ -203,7 +205,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     baseHp: 5000,
     baseAttack: 80,
     baseDefense: 50,
-    attackSpeed: 0.5,
+    baseAttackTicks: 8,   // 2.5 attacks/sec
     xpMultiplier: 40,
     goldMultiplier: 80,
     lootTable: [{ itemId: 'await-blade', chance: 0.8 }],
@@ -211,7 +213,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     isBoss: true
   },
 
-  // Zone 5: React Realm
+  // Zone 5: React Realm (extremely fast, 3-8 ticks = 2.5-6.67 attacks/sec)
   'prop-drill': {
     id: 'prop-drill',
     name: 'Prop Driller',
@@ -220,7 +222,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     baseHp: 300,
     baseAttack: 45,
     baseDefense: 35,
-    attackSpeed: 0.9,
+    baseAttackTicks: 6,   // 3.33 attacks/sec
     xpMultiplier: 4,
     goldMultiplier: 3.5,
     lootTable: [{ itemId: 'component-helm', chance: 0.05 }],
@@ -234,7 +236,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     baseHp: 350,
     baseAttack: 55,
     baseDefense: 30,
-    attackSpeed: 0.7,
+    baseAttackTicks: 5,   // 4 attacks/sec
     xpMultiplier: 4.5,
     goldMultiplier: 4,
     lootTable: [{ itemId: 'hook-blade', chance: 0.06 }],
@@ -248,7 +250,7 @@ export const MOB_TEMPLATES: Record<string, MobTemplate> = {
     baseHp: 10000,
     baseAttack: 120,
     baseDefense: 70,
-    attackSpeed: 0.6,
+    baseAttackTicks: 3,   // 6.67 attacks/sec - INSANE! Need great automation
     xpMultiplier: 60,
     goldMultiplier: 120,
     lootTable: [{ itemId: 'react-crown', chance: 0.9 }],
@@ -532,470 +534,510 @@ export const EQUIPMENT: Record<string, Equipment> = {
 };
 
 // ============ ABILITIES ============
-// These abilities teach coding concepts through their mechanics!
-// Players must THINK about when to use each one optimally.
+// TICK-BASED COOLDOWNS: 20 ticks = 1 second
+// SYNERGY SYSTEM: Setup abilities + Payoff abilities = COMBOS!
+// POWER SCALING: Later tiers are MUCH more powerful
 
 export const ABILITIES: Ability[] = [
   // ============================================================
-  // TIER 0: BASICS - Always available
+  // TIER 0: BASICS - Always available (weak, spammable)
   // ============================================================
   {
     id: 'attack',
     name: 'Attack',
     description: 'Basic attack. Your bread and butter.',
     manaCost: 0,
-    cooldown: 1,
-    currentCooldown: 0,
+    cooldownTicks: 20,  // 1 second
+    currentCooldownTicks: 0,
     effect: { type: 'damage', value: 0, scaling: 1.0 },
     unlocked: true,
-    emoji: '⚔️'
+    emoji: '⚔️',
+    tier: 0
   },
   {
     id: 'heal',
     name: 'Heal',
-    description: 'Restore 30% of max HP.',
-    manaCost: 20,
-    cooldown: 10,
-    currentCooldown: 0,
-    effect: { type: 'heal', value: 0, scaling: 0.3 },
+    description: 'Restore 25% of max HP. Long cooldown.',
+    manaCost: 25,
+    cooldownTicks: 200,  // 10 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'heal', value: 0, scaling: 0.25 },
     unlocked: true,
-    emoji: '💚'
+    emoji: '💚',
+    tier: 0
   },
 
   // ============================================================
-  // TIER 1: VARIABLES - Learn let damage = attack;
+  // TIER 1: VARIABLES (50g) - Store values, basic buffs
   // ============================================================
   {
     id: 'power-strike',
     name: 'Power Strike',
-    description: 'let damage = attack * 1.5; // Store enhanced damage',
-    manaCost: 10,
-    cooldown: 4,
-    currentCooldown: 0,
+    description: 'let damage = attack * 1.5; // 150% damage',
+    manaCost: 12,
+    cooldownTicks: 60,  // 3 seconds
+    currentCooldownTicks: 0,
     effect: { type: 'damage', value: 0, scaling: 1.5 },
     unlocked: false,
     requiredConcept: 'variables',
-    emoji: '💥'
+    emoji: '💥',
+    tier: 1
   },
   {
-    id: 'defend',
-    name: 'Defend',
-    description: 'let shield = 50; // Assign defense value',
-    manaCost: 5,
-    cooldown: 3,
-    currentCooldown: 0,
-    effect: { type: 'buff', stat: 'defense', value: 50, duration: 3 },
+    id: 'store-power',
+    name: 'Store Power',
+    description: 'let nextBonus = 1.4; // Next attack deals 140% damage!',
+    manaCost: 8,
+    cooldownTicks: 100,  // 5 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'focus_strike', critBonus: 0, damageBonus: 0.4, expireTicks: 60 },
     unlocked: false,
     requiredConcept: 'variables',
-    emoji: '🛡️'
+    emoji: '📦',
+    tier: 1
   },
   {
     id: 'meditate',
     name: 'Meditate',
-    description: 'const restore = maxMana * 0.2; // Calculate mana restore',
+    description: 'const restore = maxMana * 0.3; // Restore 30% mana',
     manaCost: 0,
-    cooldown: 8,
-    currentCooldown: 0,
+    cooldownTicks: 160,  // 8 seconds
+    currentCooldownTicks: 0,
     effect: { type: 'buff', stat: 'mana', value: 0, duration: 0 },
     unlocked: false,
     requiredConcept: 'variables',
-    emoji: '🧘'
+    emoji: '🧘',
+    tier: 1
   },
 
   // ============================================================
-  // TIER 2: CONDITIONALS - Learn if (condition) { }
+  // TIER 2: CONDITIONALS (150g) - if/else, execute mechanics
   // ============================================================
   {
     id: 'execute',
     name: 'Execute',
-    description: 'if (enemy.hp < 30%) { damage *= 3; } // Conditional bonus!',
-    manaCost: 15,
-    cooldown: 6,
-    currentCooldown: 0,
-    effect: { type: 'execute', threshold: 0.3, bonusDamage: 3.0 },
+    description: 'if (enemy.hp < 25%) { damage *= 4; } // HUGE finisher!',
+    manaCost: 20,
+    cooldownTicks: 80,  // 4 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'execute', threshold: 0.25, bonusDamage: 4.0 },
     unlocked: false,
     requiredConcept: 'conditionals',
-    emoji: '💀'
+    emoji: '💀',
+    tier: 2
+  },
+  {
+    id: 'seppuku',
+    name: 'Seppuku',
+    description: 'if (sacrifice) { hp -= 33%; nextAttack *= 1.5; } // SETUP!',
+    manaCost: 5,
+    cooldownTicks: 120,  // 6 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'self_damage_empower', selfDamagePercent: 0.33, nextAttackBonus: 0.5 },
+    unlocked: false,
+    requiredConcept: 'conditionals',
+    emoji: '🩸',
+    tier: 2
   },
   {
     id: 'desperate-strike',
     name: 'Desperate Strike',
-    description: 'damage = 50% + missingHpPercent; // Lower HP = more power!',
-    manaCost: 12,
-    cooldown: 5,
-    currentCooldown: 0,
+    description: 'damage = (1 - hpPercent) * 2.5; // Lower HP = MORE damage!',
+    manaCost: 15,
+    cooldownTicks: 60,  // 3 seconds
+    currentCooldownTicks: 0,
     effect: { type: 'desperation', baseScaling: 0.5 },
     unlocked: false,
     requiredConcept: 'conditionals',
-    emoji: '🔥'
-  },
-  {
-    id: 'overcharge',
-    name: 'Overcharge',
-    description: 'if (mana > 70%) { damage = 200%; } else { damage = 80%; }',
-    manaCost: 25,
-    cooldown: 7,
-    currentCooldown: 0,
-    effect: { type: 'conditional_damage', condition: 'mana_above', threshold: 0.7, lowScaling: 0.8, highScaling: 2.0 },
-    unlocked: false,
-    requiredConcept: 'conditionals',
-    emoji: '⚡'
+    emoji: '🔥',
+    tier: 2
   },
 
   // ============================================================
-  // TIER 3: OPERATORS - Learn && || ! for complex conditions
+  // TIER 3: OPERATORS (300g) - && || ! for complex combos
   // ============================================================
   {
-    id: 'boolean-strike',
-    name: 'Boolean Strike',
-    description: 'if (crit || enemy.hp < 30%) { damage = 250% } // OR operator!',
-    manaCost: 16,
-    cooldown: 6,
-    currentCooldown: 0,
-    effect: { type: 'boolean_or', condition1: 'is_crit', condition2: 'enemy_hp_below', threshold: 0.3, bonusScaling: 2.5, normalScaling: 1.0 },
+    id: 'crippling-blow',
+    name: 'Crippling Blow',
+    description: 'enemy.armor -= 50%; // SETUP for Execute!',
+    manaCost: 18,
+    cooldownTicks: 100,  // 5 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'armor_shred', defenseReduction: 0.5, durationTicks: 80 },
     unlocked: false,
     requiredConcept: 'operators',
-    emoji: '⚡'
+    emoji: '🦴',
+    tier: 3
   },
   {
-    id: 'combo-condition',
-    name: 'Combo Condition',
-    description: 'if (hp > 50 && mana > 30) { damage = 200%; heal(10%) } // AND operator!',
-    manaCost: 20,
-    cooldown: 8,
-    currentCooldown: 0,
-    effect: { type: 'boolean_and', condition1: 'hp_above', threshold1: 0.5, condition2: 'mana_above', threshold2: 0.3, bonusScaling: 2.0, healPercent: 0.1 },
+    id: 'condition-chain',
+    name: 'Condition Chain',
+    description: 'if (hp > 50 && mana > 30) { damage = 220%; heal(8%); }',
+    manaCost: 22,
+    cooldownTicks: 100,  // 5 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'boolean_and', condition1: 'hp_above', threshold1: 0.5, condition2: 'mana_above', threshold2: 0.3, bonusScaling: 2.2, healPercent: 0.08 },
     unlocked: false,
     requiredConcept: 'operators',
-    emoji: '🔗'
+    emoji: '🔗',
+    tier: 3
   },
   {
-    id: 'negation-blast',
-    name: 'Negation Blast',
-    description: 'if (!fullHp) { damage += missingHp% } // NOT operator!',
-    manaCost: 12,
-    cooldown: 5,
-    currentCooldown: 0,
-    effect: { type: 'boolean_not', condition: 'hp_full', bonusPerMissingPercent: 0.02 },
-    unlocked: false,
-    requiredConcept: 'operators',
-    emoji: '❗'
-  },
-
-  // ============================================================
-  // TIER 4: LOOPS - Learn for (let i = 0; i < n; i++)
-  // ============================================================
-  {
-    id: 'double-tap',
-    name: 'Double Tap',
-    description: 'for (let i = 0; i < 2; i++) { hit(60%); } // Loop twice!',
+    id: 'not-full',
+    name: '!FullHP Strike',
+    description: 'if (!fullHp) { damage += missingHp * 3%; } // Scales hard!',
     manaCost: 14,
-    cooldown: 5,
-    currentCooldown: 0,
-    effect: { type: 'multi_hit', hits: 2, scaling: 0.6 },
+    cooldownTicks: 60,  // 3 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'boolean_not', condition: 'hp_full', bonusPerMissingPercent: 0.03 },
     unlocked: false,
-    requiredConcept: 'loops',
-    emoji: '👆👆'
+    requiredConcept: 'operators',
+    emoji: '❗',
+    tier: 3
   },
+
+  // ============================================================
+  // TIER 4: LOOPS (500g) - Multi-hit combos
+  // ============================================================
   {
     id: 'triple-strike',
     name: 'Triple Strike',
-    description: 'for (let i = 0; i < 3; i++) { hit(50%); } // Loop 3x!',
-    manaCost: 20,
-    cooldown: 8,
-    currentCooldown: 0,
-    effect: { type: 'multi_hit', hits: 3, scaling: 0.5 },
+    description: 'for (i=0; i<3; i++) { hit(60%); } // 180% total!',
+    manaCost: 25,
+    cooldownTicks: 100,  // 5 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'multi_hit', hits: 3, scaling: 0.6 },
     unlocked: false,
     requiredConcept: 'loops',
-    emoji: '🔱'
+    emoji: '🔱',
+    tier: 4
+  },
+  {
+    id: 'rapid-fire',
+    name: 'Rapid Fire',
+    description: 'for (i=0; i<5; i++) { hit(40%); } // 200% total, fast!',
+    manaCost: 30,
+    cooldownTicks: 80,  // 4 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'multi_hit', hits: 5, scaling: 0.4 },
+    unlocked: false,
+    requiredConcept: 'loops',
+    emoji: '🔫',
+    tier: 4
   },
   {
     id: 'ramping-fury',
     name: 'Ramping Fury',
-    description: 'let stack = 0; while(true) { damage += stack++ * 20%; }',
-    manaCost: 10,
-    cooldown: 3,
-    currentCooldown: 0,
-    effect: { type: 'ramping', baseScaling: 0.8, rampPerUse: 0.2 },
+    description: 'while(true) { damage += stack++ * 25%; } // Stacks forever!',
+    manaCost: 12,
+    cooldownTicks: 40,  // 2 seconds - fast to stack
+    currentCooldownTicks: 0,
+    effect: { type: 'ramping', baseScaling: 0.7, rampPerUse: 0.25 },
     unlocked: false,
     requiredConcept: 'loops',
-    emoji: '📈'
+    emoji: '📈',
+    tier: 4
   },
 
   // ============================================================
-  // TIER 4: FUNCTIONS - Learn function calc(x) { return x; }
+  // TIER 5: FUNCTIONS (800g) - Calculated damage, % HP attacks
   // ============================================================
   {
     id: 'percent-slash',
-    name: '% Slash',
-    description: 'function damage(enemy) { return enemy.maxHp * 0.08; }',
-    manaCost: 18,
-    cooldown: 8,
-    currentCooldown: 0,
-    effect: { type: 'percent_max_hp', percent: 0.08 },
+    name: '% HP Slash',
+    description: 'function dmg(e) { return e.maxHp * 12%; } // Melts tanks!',
+    manaCost: 28,
+    cooldownTicks: 120,  // 6 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'percent_max_hp', percent: 0.12 },
     unlocked: false,
     requiredConcept: 'functions',
-    emoji: '📊'
+    emoji: '📊',
+    tier: 5
   },
   {
     id: 'finishing-blow',
     name: 'Finishing Blow',
-    description: 'function finish(e) { return (e.maxHp - e.hp) * 0.15; }',
-    manaCost: 12,
-    cooldown: 5,
-    currentCooldown: 0,
-    effect: { type: 'percent_missing_hp', percent: 0.15 },
+    description: 'function finish(e) { return e.missingHp * 25%; } // SYNERGY: Cripple→Finish!',
+    manaCost: 18,
+    cooldownTicks: 80,  // 4 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'percent_missing_hp', percent: 0.25 },
     unlocked: false,
     requiredConcept: 'functions',
-    emoji: '🎯'
+    emoji: '🎯',
+    tier: 5
   },
   {
-    id: 'life-drain',
-    name: 'Life Drain',
-    description: 'function drain(dmg) { heal(dmg * 0.5); return dmg; }',
-    manaCost: 22,
-    cooldown: 9,
-    currentCooldown: 0,
-    effect: { type: 'lifesteal_burst', scaling: 1.2, healPercent: 0.5 },
+    id: 'vampiric-touch',
+    name: 'Vampiric Touch',
+    description: 'function drain() { nextAttack.lifesteal = 80%; } // SETUP!',
+    manaCost: 20,
+    cooldownTicks: 140,  // 7 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'vampiric_touch', lifestealBonus: 0.8, expireTicks: 60 },
     unlocked: false,
     requiredConcept: 'functions',
-    emoji: '🧛'
+    emoji: '🧛',
+    tier: 5
   },
 
   // ============================================================
-  // TIER 5: ARRAYS - Learn const arr = []; arr.push();
+  // TIER 6: ARRAYS (1200g) - Mana manipulation, resource combos
   // ============================================================
   {
-    id: 'efficient-strike',
-    name: 'Efficient Strike',
-    description: 'costs.filter(c => hp > 80%).reduce((a,b) => a-5, cost);',
+    id: 'mana-overload',
+    name: 'Mana Overload',
+    description: '[...mana].map(m => m * 2); // SETUP: Double mana for next!',
     manaCost: 15,
-    cooldown: 4,
-    currentCooldown: 0,
-    effect: { type: 'conditional_cost', scaling: 1.3, condition: 'hp_above', threshold: 0.8, discount: 5 },
+    cooldownTicks: 160,  // 8 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'mana_overload', manaMultiplier: 2.0, expireTicks: 60 },
     unlocked: false,
     requiredConcept: 'arrays-basics',
-    emoji: '💡'
+    emoji: '💫',
+    tier: 6
   },
   {
     id: 'mana-bomb',
     name: 'Mana Bomb',
-    description: '[...allMana].forEach(m => damage += m * 3); mana = 0;',
+    description: 'mana.forEach(m => damage += m * 5); mana = 0; // PAYOFF!',
     manaCost: 1,
-    cooldown: 15,
-    currentCooldown: 0,
-    effect: { type: 'mana_consume', damagePerMana: 3 },
+    cooldownTicks: 200,  // 10 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'mana_consume', damagePerMana: 5 },
     unlocked: false,
     requiredConcept: 'arrays-basics',
-    emoji: '💣'
+    emoji: '💣',
+    tier: 6
   },
   {
     id: 'conservation',
     name: 'Conservation',
-    description: 'if (kills.includes(target)) { mana.push(refund); }',
-    manaCost: 16,
-    cooldown: 5,
-    currentCooldown: 0,
-    effect: { type: 'refund_on_kill', scaling: 1.0, refundPercent: 0.5 },
+    description: 'kills.push(() => mana += 60%); // Refund on kill!',
+    manaCost: 20,
+    cooldownTicks: 80,  // 4 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'refund_on_kill', scaling: 1.2, refundPercent: 0.6 },
     unlocked: false,
     requiredConcept: 'arrays-basics',
-    emoji: '♻️'
+    emoji: '♻️',
+    tier: 6
   },
 
   // ============================================================
-  // TIER 6: OBJECTS - Learn const obj = { key: value };
+  // TIER 7: OBJECTS (1800g) - Complex buffs, stat manipulation
   // ============================================================
-  {
-    id: 'focus',
-    name: 'Focus',
-    description: 'player.buffs = { ...player.buffs, attack: +100 };',
-    manaCost: 8,
-    cooldown: 6,
-    currentCooldown: 0,
-    effect: { type: 'buff', stat: 'attack', value: 100, duration: 5 },
-    unlocked: false,
-    requiredConcept: 'objects',
-    emoji: '🎯'
-  },
   {
     id: 'berserk',
     name: 'Berserk',
-    description: 'Object.assign(stats, { atkSpd: +50%, def: -30% });',
-    manaCost: 20,
-    cooldown: 20,
-    currentCooldown: 0,
-    effect: { type: 'berserk', attackSpeedBonus: 0.5, defenseReduction: 0.3, duration: 8 },
+    description: 'Object.assign(self, { atkSpd: +80%, def: -40% }); // RISKY!',
+    manaCost: 30,
+    cooldownTicks: 300,  // 15 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'berserk', attackSpeedBonus: 0.8, defenseReduction: 0.4, duration: 10 },
     unlocked: false,
     requiredConcept: 'objects',
-    emoji: '😤'
+    emoji: '😤',
+    tier: 7
+  },
+  {
+    id: 'focus-strike',
+    name: 'Focus',
+    description: 'this.buffs = { crit: guaranteed, dmg: +60% }; // SETUP!',
+    manaCost: 25,
+    cooldownTicks: 180,  // 9 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'focus_strike', critBonus: 1.0, damageBonus: 0.6, expireTicks: 80 },
+    unlocked: false,
+    requiredConcept: 'objects',
+    emoji: '🎯',
+    tier: 7
   },
   {
     id: 'calculated-strike',
-    name: 'Calculated Strike',
-    description: 'const dmg = enemy.attack * 2; // Read enemy object',
-    manaCost: 18,
-    cooldown: 8,
-    currentCooldown: 0,
-    effect: { type: 'reflect_stat', stat: 'attack', multiplier: 2 },
+    name: 'Calculated',
+    description: 'const dmg = enemy.attack * 3; // Turns their power against them!',
+    manaCost: 22,
+    cooldownTicks: 120,  // 6 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'reflect_stat', stat: 'attack', multiplier: 3 },
     unlocked: false,
     requiredConcept: 'objects',
-    emoji: '🧠'
+    emoji: '🧠',
+    tier: 7
   },
 
   // ============================================================
-  // UNLOCKED THROUGH CONCEPTS - Advanced abilities
+  // TIER 8: ARRAY METHODS (2500g) - AoE, accumulation
   // ============================================================
   {
-    id: 'console-log',
-    name: 'console.log()',
-    description: 'Debug attack. Always crits! Damage = attack * 1.5.',
-    manaCost: 15,
-    cooldown: 5,
-    currentCooldown: 0,
-    effect: { type: 'guaranteed_crit', scaling: 1.5 },
-    unlocked: false,
-    requiredConcept: 'variables',
-    emoji: '📝'
-  },
-  {
-    id: 'ternary-strike',
-    name: 'Ternary Strike',
-    description: 'hp > 50% ? deal 80% damage : deal 180% damage',
-    manaCost: 14,
-    cooldown: 5,
-    currentCooldown: 0,
-    effect: { type: 'ternary', condition: 'hp_above', threshold: 0.5, trueScaling: 0.8, falseScaling: 1.8 },
-    unlocked: false,
-    requiredConcept: 'conditionals',
-    emoji: '❓'
-  },
-  {
-    id: 'for-loop',
-    name: 'for Loop',
-    description: 'for(i=0; i<4; i++) { attack() } - Hit 4x for 40% each.',
-    manaCost: 30,
-    cooldown: 12,
-    currentCooldown: 0,
-    effect: { type: 'multi_hit', hits: 4, scaling: 0.4 },
-    unlocked: false,
-    requiredConcept: 'loops',
-    emoji: '🔄'
-  },
-  {
     id: 'map-attack',
-    name: '.map() Attack',
-    description: 'enemies.map(e => damage(e)) - Hit ALL enemies for 80%!',
-    manaCost: 40,
-    cooldown: 15,
-    currentCooldown: 0,
-    effect: { type: 'aoe', damage: 0, scaling: 0.8, hitAll: true },
-    unlocked: false,
-    requiredConcept: 'arrays-methods',
-    emoji: '🗺️'
-  },
-  {
-    id: 'reduce-attack',
-    name: '.reduce() Finisher',
-    description: 'Deal damage = sum of all damage dealt this fight * 0.1',
+    name: '.map() Strike',
+    description: 'enemies.map(e => hit(e, 100%)); // Hit ALL enemies!',
     manaCost: 50,
-    cooldown: 30,
-    currentCooldown: 0,
-    effect: { type: 'reduce_damage', multiplier: 0.1 },
+    cooldownTicks: 200,  // 10 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'aoe', damage: 0, scaling: 1.0, hitAll: true },
     unlocked: false,
     requiredConcept: 'arrays-methods',
-    emoji: '➕'
+    emoji: '🗺️',
+    tier: 8
   },
   {
-    id: 'async-heal',
-    name: 'Async Heal',
-    description: 'await heal() - Restore 10% HP every second for 5s.',
-    manaCost: 35,
-    cooldown: 20,
-    currentCooldown: 0,
-    effect: { type: 'hot', healPercent: 0.1, ticks: 5, interval: 1.0 },
+    id: 'reduce-finisher',
+    name: '.reduce() Finisher',
+    description: 'allDmg.reduce((a,b) => a+b) * 15%; // HUGE after long fights!',
+    manaCost: 60,
+    cooldownTicks: 400,  // 20 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'reduce_damage', multiplier: 0.15 },
+    unlocked: false,
+    requiredConcept: 'arrays-methods',
+    emoji: '➕',
+    tier: 8
+  },
+  {
+    id: 'filter-weak',
+    name: '.filter() Weak',
+    description: 'targets.filter(t => t.hp < 40%).map(execute); // Mass execute!',
+    manaCost: 45,
+    cooldownTicks: 160,  // 8 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'execute', threshold: 0.4, bonusDamage: 5.0 },
+    unlocked: false,
+    requiredConcept: 'arrays-methods',
+    emoji: '🔍',
+    tier: 8
+  },
+
+  // ============================================================
+  // TIER 9: ASYNC (4000g) - Delayed effects, chains
+  // ============================================================
+  {
+    id: 'async-burst',
+    name: 'Async Burst',
+    description: 'await Promise.all([hit(), hit(), hit(), hit()]); // 4x 80%!',
+    manaCost: 55,
+    cooldownTicks: 160,  // 8 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'multi_hit', hits: 4, scaling: 0.8 },
     unlocked: false,
     requiredConcept: 'async-basics',
-    emoji: '✨'
+    emoji: '⚡',
+    tier: 9
   },
   {
     id: 'promise-chain',
     name: 'Promise Chain',
-    description: 'attack().then(heal).then(attack) - Attack, heal 10%, attack.',
-    manaCost: 30,
-    cooldown: 10,
-    currentCooldown: 0,
-    effect: { type: 'promise_chain', actions: ['attack', 'heal_10', 'attack'] },
+    description: 'attack().then(heal).then(crit); // Attack→Heal 20%→Big hit!',
+    manaCost: 45,
+    cooldownTicks: 180,  // 9 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'promise_chain', actions: ['attack', 'heal_20', 'crit_attack'] },
     unlocked: false,
     requiredConcept: 'async-basics',
-    emoji: '⛓️'
+    emoji: '⛓️',
+    tier: 9
+  },
+  {
+    id: 'async-heal',
+    name: 'Async Heal',
+    description: 'await heal(12%, 6 ticks); // 72% HP over 6 seconds!',
+    manaCost: 50,
+    cooldownTicks: 300,  // 15 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'hot', healPercent: 0.12, ticks: 6, interval: 1.0 },
+    unlocked: false,
+    requiredConcept: 'async-basics',
+    emoji: '✨',
+    tier: 9
   },
 
   // ============================================================
-  // TIER 10: REACT BASICS - Components & Props
+  // TIER 10: REACT BASICS (6000g) - Component combos
   // ============================================================
   {
     id: 'component-render',
-    name: 'Component Render',
-    description: '<DamageComponent damage={attack * 1.5} /> // Render for 150% damage!',
-    manaCost: 25,
-    cooldown: 7,
-    currentCooldown: 0,
-    effect: { type: 'damage', value: 0, scaling: 1.5 },
+    name: '<Damage />',
+    description: '<DamageComponent props={{dmg: 250%}} /> // Massive render!',
+    manaCost: 40,
+    cooldownTicks: 120,  // 6 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'damage', value: 0, scaling: 2.5 },
     unlocked: false,
     requiredConcept: 'react-basics',
-    emoji: '🧩'
+    emoji: '🧩',
+    tier: 10
   },
   {
     id: 'props-drill',
     name: 'Props Drill',
-    description: '<Parent><Child damage={dmg}/></Parent> // Drill 3 hits, 60% each!',
-    manaCost: 30,
-    cooldown: 10,
-    currentCooldown: 0,
-    effect: { type: 'multi_hit', hits: 3, scaling: 0.6 },
+    description: '<A><B><C hits={6} dmg={55%}/></C></B></A> // Deep drill!',
+    manaCost: 55,
+    cooldownTicks: 140,  // 7 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'multi_hit', hits: 6, scaling: 0.55 },
     unlocked: false,
     requiredConcept: 'react-basics',
-    emoji: '⬇️'
+    emoji: '⬇️',
+    tier: 10
   },
   {
     id: 'event-handler',
-    name: 'Event Handler',
-    description: 'onClick={() => { attack(); heal(15%) }} // Attack + heal on trigger!',
-    manaCost: 22,
-    cooldown: 8,
-    currentCooldown: 0,
-    effect: { type: 'lifesteal_burst', scaling: 1.2, healPercent: 0.15 },
+    name: 'onClick()',
+    description: 'onClick={() => { attack(200%); heal(20%); }} // Click combo!',
+    manaCost: 45,
+    cooldownTicks: 160,  // 8 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'lifesteal_burst', scaling: 2.0, healPercent: 0.2 },
     unlocked: false,
     requiredConcept: 'react-basics',
-    emoji: '👆'
+    emoji: '👆',
+    tier: 10
   },
 
   // ============================================================
-  // TIER 11: REACT HOOKS - useState & useEffect
+  // TIER 11: REACT HOOKS (10000g) - State management, ULTIMATE
   // ============================================================
-  {
-    id: 'use-effect',
-    name: 'useEffect()',
-    description: 'useEffect(() => buff, []) - +50% attack speed for 10s.',
-    manaCost: 45,
-    cooldown: 30,
-    currentCooldown: 0,
-    effect: { type: 'buff', stat: 'attackSpeed', value: 0.5, duration: 10 },
-    unlocked: false,
-    requiredConcept: 'react-hooks',
-    emoji: '⚛️'
-  },
   {
     id: 'use-state',
     name: 'useState()',
-    description: 'const [dmg, setDmg] = useState(50) - Store 50 damage, release anytime.',
-    manaCost: 25,
-    cooldown: 12,
-    currentCooldown: 0,
-    effect: { type: 'stored_damage', baseDamage: 50, canStack: true },
+    description: 'const [power, setPower] = useState(0); setPower(p => p + 100);',
+    manaCost: 35,
+    cooldownTicks: 60,  // 3 seconds - fast to stack
+    currentCooldownTicks: 0,
+    effect: { type: 'stored_damage', baseDamage: 100, canStack: true },
     unlocked: false,
     requiredConcept: 'react-hooks',
-    emoji: '📦'
+    emoji: '📦',
+    tier: 11
+  },
+  {
+    id: 'use-effect',
+    name: 'useEffect()',
+    description: 'useEffect(() => { atkSpd += 100%; }, []); // Mount buff!',
+    manaCost: 70,
+    cooldownTicks: 400,  // 20 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'buff', stat: 'attackSpeed', value: 1.0, duration: 15 },
+    unlocked: false,
+    requiredConcept: 'react-hooks',
+    emoji: '⚛️',
+    tier: 11
+  },
+  {
+    id: 'blood-pact',
+    name: 'Blood Pact',
+    description: 'useCallback(() => { hp -= 50%; nextDmg *= 3; }); // ULTIMATE SETUP!',
+    manaCost: 40,
+    cooldownTicks: 300,  // 15 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'blood_pact', hpCostPercent: 0.5, damageMultiplier: 3.0, expireTicks: 80 },
+    unlocked: false,
+    requiredConcept: 'react-hooks',
+    emoji: '🩸',
+    tier: 11
   }
 ];
 
@@ -1416,7 +1458,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'variables',
     description: 'Store values and automate your first loop!',
     codeExample: `let damage = 10;\nwhile (true) {\n  attack();\n}`,
-    unlocksAbilities: ['power-strike', 'defend', 'meditate'],
+    unlocksAbilities: ['power-strike', 'store-power', 'meditate'],
     unlocksFeatures: ['loop_while_true', 'variables_let', 'variables_const', 'action_heal'],
     unlocksConditions: [],
     statBonus: {},
@@ -1434,8 +1476,8 @@ export const JS_CONCEPTS: JsConcept[] = [
     name: 'Conditionals',
     category: 'conditionals',
     description: 'Make decisions - heal when hurt, execute when enemy is low!',
-    codeExample: `if (hp < 50) {\n  heal();\n} else if (enemy.hp < 30) {\n  execute();\n}`,
-    unlocksAbilities: ['execute', 'desperate-strike', 'overcharge', 'ternary-strike'],
+    codeExample: `if (hp < 50) {\n  heal();\n} else if (enemy.hp < 25) {\n  execute();\n}`,
+    unlocksAbilities: ['execute', 'seppuku', 'desperate-strike'],
     unlocksFeatures: ['condition_hp_below', 'condition_hp_above', 'condition_enemy_hp_below', 'condition_mana_above', 'action_power_strike'],
     unlocksConditions: ['hp_below', 'hp_above', 'enemy_hp_below', 'mana_above'],
     statBonus: {},
@@ -1454,7 +1496,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'conditionals',
     description: 'Combine conditions with AND, OR, NOT for smarter scripts!',
     codeExample: `if (hp < 50 && mana > 20) {\n  heal();\n} else if (enemy.hp < 30 || hp > 80) {\n  powerStrike();\n}`,
-    unlocksAbilities: ['boolean-strike', 'combo-condition', 'negation-blast'],
+    unlocksAbilities: ['crippling-blow', 'condition-chain', 'not-full'],
     unlocksFeatures: ['operator_and', 'operator_or', 'operator_not', 'condition_ability_ready', 'action_defend'],
     unlocksConditions: ['ability_ready'],
     statBonus: {},
@@ -1473,7 +1515,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'loops',
     description: 'Repeat actions efficiently - combo attacks!',
     codeExample: `for (let i = 0; i < 3; i++) {\n  attack();\n  if (enemy.hp <= 0) break;\n}`,
-    unlocksAbilities: ['double-tap', 'triple-strike', 'ramping-fury', 'for-loop'],
+    unlocksAbilities: ['triple-strike', 'rapid-fire', 'ramping-fury'],
     unlocksFeatures: ['loop_for', 'loop_counter', 'loop_break', 'loop_continue', 'action_meditate'],
     unlocksConditions: ['on_kill', 'on_crit'],
     statBonus: {},
@@ -1491,8 +1533,8 @@ export const JS_CONCEPTS: JsConcept[] = [
     name: 'Functions',
     category: 'functions',
     description: 'Create reusable code - define your own attack combos!',
-    codeExample: `function burst(enemy) {\n  if (enemy.hp < 30) return execute();\n  return powerStrike();\n}`,
-    unlocksAbilities: ['percent-slash', 'finishing-blow', 'life-drain', 'console-log'],
+    codeExample: `function burst(enemy) {\n  if (enemy.hp < 25) return execute();\n  return powerStrike();\n}`,
+    unlocksAbilities: ['percent-slash', 'finishing-blow', 'vampiric-touch'],
     unlocksFeatures: ['function_define', 'function_params', 'function_return', 'function_arrow', 'math_operations'],
     unlocksConditions: [],
     statBonus: {},
@@ -1509,9 +1551,9 @@ export const JS_CONCEPTS: JsConcept[] = [
     id: 'arrays-basics',
     name: 'Arrays',
     category: 'arrays',
-    description: 'Work with collections - target multiple enemies efficiently!',
+    description: 'Work with collections - mana manipulation for big combos!',
     codeExample: `const enemies = getEnemies();\nenemies.forEach(e => {\n  if (e.hp < 30) execute(e);\n});`,
-    unlocksAbilities: ['efficient-strike', 'mana-bomb', 'conservation'],
+    unlocksAbilities: ['mana-overload', 'mana-bomb', 'conservation'],
     unlocksFeatures: ['array_length', 'array_foreach', 'array_includes', 'array_find'],
     unlocksConditions: [],
     statBonus: {},
@@ -1530,7 +1572,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'objects',
     description: 'Group related data - read enemy stats, manage buffs!',
     codeExample: `const { hp, attack } = enemy;\nif (attack > 50) {\n  defend();\n}`,
-    unlocksAbilities: ['focus', 'berserk', 'calculated-strike'],
+    unlocksAbilities: ['berserk', 'focus-strike', 'calculated-strike'],
     unlocksFeatures: ['object_access', 'object_destructure', 'object_spread'],
     unlocksConditions: [],
     statBonus: {},
@@ -1549,7 +1591,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'arrays',
     description: 'Transform data - filter weak enemies, map attacks!',
     codeExample: `const weak = enemies.filter(e => e.hp < 50);\nconst damage = weak.map(e => attack(e))\n  .reduce((a, b) => a + b, 0);`,
-    unlocksAbilities: ['map-attack', 'reduce-attack'],
+    unlocksAbilities: ['map-attack', 'reduce-finisher', 'filter-weak'],
     unlocksFeatures: ['array_filter', 'array_map', 'ternary_operator'],
     unlocksConditions: [],
     statBonus: {},
@@ -1568,7 +1610,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'async',
     description: 'Handle timing - chain actions, wait for cooldowns!',
     codeExample: `async function combo() {\n  await powerStrike();\n  await heal();\n  await execute();\n}`,
-    unlocksAbilities: ['async-heal', 'promise-chain'],
+    unlocksAbilities: ['async-burst', 'promise-chain', 'async-heal'],
     unlocksFeatures: ['promise_then', 'async_await', 'setTimeout_setInterval'],
     unlocksConditions: [],
     statBonus: {},
@@ -1606,7 +1648,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'react',
     description: 'Master state - useState for tracking, useEffect for reactions!',
     codeExample: `const [combo, setCombo] = useState(0);\nuseEffect(() => {\n  if (combo > 10) setBerserk(true);\n}, [combo]);`,
-    unlocksAbilities: ['use-effect', 'use-state'],
+    unlocksAbilities: ['use-state', 'use-effect', 'blood-pact'],
     unlocksFeatures: ['react_useState', 'react_useEffect'],
     unlocksConditions: [],
     statBonus: {},
