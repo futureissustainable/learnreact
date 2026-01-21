@@ -629,11 +629,11 @@ export const ABILITIES: Ability[] = [
   {
     id: 'seppuku',
     name: 'Seppuku',
-    description: 'if (sacrifice) { hp -= 33%; nextAttack *= 1.5; } // SETUP!',
+    description: 'if (sacrifice) { hp -= 25%; nextAttack *= 1.5; } // SETUP!',
     manaCost: 5,
     cooldownTicks: 120,  // 6 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'self_damage_empower', selfDamagePercent: 0.33, nextAttackBonus: 0.5 },
+    effect: { type: 'self_damage_empower', selfDamagePercent: 0.25, nextAttackBonus: 0.5 },
     unlocked: false,
     requiredConcept: 'conditionals',
     emoji: '🩸',
@@ -642,11 +642,11 @@ export const ABILITIES: Ability[] = [
   {
     id: 'desperate-strike',
     name: 'Desperate Strike',
-    description: 'damage = (1 - hpPercent) * 2.5; // Lower HP = MORE damage!',
+    description: 'damage = 1 + (1 - hpPercent); // 100% base, +100% at 1 HP!',
     manaCost: 15,
     cooldownTicks: 60,  // 3 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'desperation', baseScaling: 0.5 },
+    effect: { type: 'desperation', baseScaling: 1.0 },
     unlocked: false,
     requiredConcept: 'conditionals',
     emoji: '🔥',
@@ -670,82 +670,84 @@ export const ABILITIES: Ability[] = [
     tier: 3
   },
   {
-    id: 'condition-chain',
-    name: 'Condition Chain',
-    description: 'if (hp > 50 && mana > 30) { damage = 220%; heal(8%); }',
-    manaCost: 22,
-    cooldownTicks: 100,  // 5 seconds
+    id: 'conditional-cube',
+    name: 'Conditional Cube',
+    description: 'if (hp === 50% && mana === 100%) { damage = 500%; } // Precision!',
+    manaCost: 0,
+    cooldownTicks: 200,  // 10 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'boolean_and', condition1: 'hp_above', threshold1: 0.5, condition2: 'mana_above', threshold2: 0.3, bonusScaling: 2.2, healPercent: 0.08 },
+    effect: { type: 'conditional_cube', hpTarget: 0.5, manaTarget: 1.0, bonusScaling: 5.0, tolerance: 0.05 },
     unlocked: false,
     requiredConcept: 'operators',
-    emoji: '🔗',
+    emoji: '🎲',
     tier: 3
   },
   {
-    id: 'not-full',
-    name: '!FullHP Strike',
-    description: 'if (!fullHp) { damage += missingHp * 3%; } // Scales hard!',
-    manaCost: 14,
-    cooldownTicks: 60,  // 3 seconds
+    id: 'mana-reap',
+    name: 'Mana Reap',
+    description: '!hp ? mana += hp * 0.99; invuln(1s); // Convert HP to mana!',
+    manaCost: 0,
+    cooldownTicks: 200,  // 10 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'boolean_not', condition: 'hp_full', bonusPerMissingPercent: 0.03 },
+    effect: { type: 'mana_reap', hpToManaPercent: 0.99, invulnTicks: 20 },
     unlocked: false,
     requiredConcept: 'operators',
-    emoji: '❗',
+    emoji: '💜',
     tier: 3
   },
 
   // ============================================================
-  // TIER 4: LOOPS (500g) - Multi-hit combos
+  // TIER 4: LOOPS (500g) - REQUIRES looped usage for effectiveness!
+  // Call these repeatedly (in a loop) to maximize damage
   // ============================================================
   {
-    id: 'triple-strike',
-    name: 'Triple Strike',
-    description: 'for (i=0; i<3; i++) { hit(60%); } // 180% total!',
-    manaCost: 25,
-    cooldownTicks: 100,  // 5 seconds
+    id: 'iterate-strike',
+    name: 'Iterate Strike',
+    description: 'for (i++; i < 6;) { dmg += 30%; } // 50% base, +30% per loop!',
+    manaCost: 8,
+    cooldownTicks: 20,  // 1 second - FAST to encourage looping
     currentCooldownTicks: 0,
-    effect: { type: 'multi_hit', hits: 3, scaling: 0.6 },
+    effect: { type: 'iterate', baseScaling: 0.5, stackBonus: 0.3, maxStacks: 6, decayTicks: 60 },
     unlocked: false,
     requiredConcept: 'loops',
-    emoji: '🔱',
+    emoji: '🔄',
     tier: 4
   },
   {
-    id: 'rapid-fire',
-    name: 'Rapid Fire',
-    description: 'for (i=0; i<5; i++) { hit(40%); } // 200% total, fast!',
+    id: 'while-fury',
+    name: 'While Fury',
+    description: 'while (mana > 0) { hit(80%); mana -= 5; } // Spam until empty!',
+    manaCost: 5,
+    cooldownTicks: 10,  // 0.5 seconds - VERY fast, drain mana quickly
+    currentCooldownTicks: 0,
+    effect: { type: 'while_active', damageScaling: 0.8, manaDrain: 5 },
+    unlocked: false,
+    requiredConcept: 'loops',
+    emoji: '🌀',
+    tier: 4
+  },
+  {
+    id: 'break-point',
+    name: 'Break Point',
+    description: 'while (enemy.hp > 25%) { hit(40%); } break; // 300% finisher!',
     manaCost: 30,
-    cooldownTicks: 80,  // 4 seconds
+    cooldownTicks: 160,  // 8 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'multi_hit', hits: 5, scaling: 0.4 },
+    effect: { type: 'break_finisher', threshold: 0.25, normalScaling: 0.4, finisherScaling: 3.0 },
     unlocked: false,
     requiredConcept: 'loops',
-    emoji: '🔫',
-    tier: 4
-  },
-  {
-    id: 'ramping-fury',
-    name: 'Ramping Fury',
-    description: 'while(true) { damage += stack++ * 25%; } // Stacks forever!',
-    manaCost: 12,
-    cooldownTicks: 40,  // 2 seconds - fast to stack
-    currentCooldownTicks: 0,
-    effect: { type: 'ramping', baseScaling: 0.7, rampPerUse: 0.25 },
-    unlocked: false,
-    requiredConcept: 'loops',
-    emoji: '📈',
+    emoji: '💔',
     tier: 4
   },
 
   // ============================================================
-  // TIER 5: FUNCTIONS (800g) - Calculated damage, % HP attacks
+  // TIER 5: FUNCTIONS (800g) - Functions take input, return output!
+  // Understanding parameters and return values = better damage
   // ============================================================
   {
-    id: 'percent-slash',
-    name: '% HP Slash',
-    description: 'function dmg(e) { return e.maxHp * 12%; } // Melts tanks!',
+    id: 'calc-damage',
+    name: 'Calc(enemy)',
+    description: 'function calc(e) { return e.maxHp * 0.12; } // Melts tanks!',
     manaCost: 28,
     cooldownTicks: 120,  // 6 seconds
     currentCooldownTicks: 0,
@@ -756,115 +758,117 @@ export const ABILITIES: Ability[] = [
     tier: 5
   },
   {
-    id: 'finishing-blow',
-    name: 'Finishing Blow',
-    description: 'function finish(e) { return e.missingHp * 25%; } // SYNERGY: Cripple→Finish!',
-    manaCost: 18,
-    cooldownTicks: 80,  // 4 seconds
-    currentCooldownTicks: 0,
-    effect: { type: 'percent_missing_hp', percent: 0.25 },
-    unlocked: false,
-    requiredConcept: 'functions',
-    emoji: '🎯',
-    tier: 5
-  },
-  {
-    id: 'vampiric-touch',
-    name: 'Vampiric Touch',
-    description: 'function drain() { nextAttack.lifesteal = 80%; } // SETUP!',
-    manaCost: 20,
-    cooldownTicks: 140,  // 7 seconds
-    currentCooldownTicks: 0,
-    effect: { type: 'vampiric_touch', lifestealBonus: 0.8, expireTicks: 60 },
-    unlocked: false,
-    requiredConcept: 'functions',
-    emoji: '🧛',
-    tier: 5
-  },
-
-  // ============================================================
-  // TIER 6: ARRAYS (1200g) - Mana manipulation, resource combos
-  // ============================================================
-  {
-    id: 'mana-overload',
-    name: 'Mana Overload',
-    description: '[...mana].map(m => m * 2); // SETUP: Double mana for next!',
+    id: 'return-strike',
+    name: 'Return(dmg)',
+    description: 'let stored = 0; return stored += lastDmg; // Stores & returns!',
     manaCost: 15,
-    cooldownTicks: 160,  // 8 seconds
+    cooldownTicks: 60,  // 3 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'mana_overload', manaMultiplier: 2.0, expireTicks: 60 },
+    effect: { type: 'return_value', baseScaling: 0.8, storedMultiplier: 1.0 },
     unlocked: false,
-    requiredConcept: 'arrays-basics',
-    emoji: '💫',
-    tier: 6
+    requiredConcept: 'functions',
+    emoji: '↩️',
+    tier: 5
   },
   {
-    id: 'mana-bomb',
-    name: 'Mana Bomb',
-    description: 'mana.forEach(m => damage += m * 5); mana = 0; // PAYOFF!',
-    manaCost: 1,
-    cooldownTicks: 200,  // 10 seconds
-    currentCooldownTicks: 0,
-    effect: { type: 'mana_consume', damagePerMana: 5 },
-    unlocked: false,
-    requiredConcept: 'arrays-basics',
-    emoji: '💣',
-    tier: 6
-  },
-  {
-    id: 'conservation',
-    name: 'Conservation',
-    description: 'kills.push(() => mana += 60%); // Refund on kill!',
+    id: 'call-stack',
+    name: 'CallStack()',
+    description: 'damage = attack * callDepth; // +30% per ability used!',
     manaCost: 20,
+    cooldownTicks: 100,  // 5 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'call_stack', baseScaling: 1.0, depthBonus: 0.3 },
+    unlocked: false,
+    requiredConcept: 'functions',
+    emoji: '📚',
+    tier: 5
+  },
+
+  // ============================================================
+  // TIER 6: ARRAYS (1200g) - Push, pop, length - array operations!
+  // Understanding arrays = managing collections of damage/effects
+  // ============================================================
+  {
+    id: 'push-damage',
+    name: 'arr.push(dmg)',
+    description: 'dmgArray.push(attack * 0.6); // Store damage for later!',
+    manaCost: 10,
+    cooldownTicks: 30,  // 1.5 seconds - fast to build up
+    currentCooldownTicks: 0,
+    effect: { type: 'array_push', damageStored: 0.6, maxStacks: 8 },
+    unlocked: false,
+    requiredConcept: 'arrays-basics',
+    emoji: '📥',
+    tier: 6
+  },
+  {
+    id: 'pop-damage',
+    name: 'arr.pop()',
+    description: 'while (arr.length) { damage += arr.pop(); } // Release ALL!',
+    manaCost: 15,
     cooldownTicks: 80,  // 4 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'refund_on_kill', scaling: 1.2, refundPercent: 0.6 },
+    effect: { type: 'array_pop', bonusMultiplier: 1.2 },
     unlocked: false,
     requiredConcept: 'arrays-basics',
-    emoji: '♻️',
+    emoji: '📤',
+    tier: 6
+  },
+  {
+    id: 'length-strike',
+    name: 'arr.length',
+    description: 'damage = attack * abilities.filter(a => a.onCD).length;',
+    manaCost: 20,
+    cooldownTicks: 100,  // 5 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'array_length', baseScaling: 0.5, perCooldownBonus: 0.4 },
+    unlocked: false,
+    requiredConcept: 'arrays-basics',
+    emoji: '📏',
     tier: 6
   },
 
   // ============================================================
-  // TIER 7: OBJECTS (1800g) - Complex buffs, stat manipulation
+  // TIER 7: OBJECTS (1800g) - Property access, spread, destructuring
+  // Understanding objects = reading and manipulating data structures
   // ============================================================
   {
-    id: 'berserk',
-    name: 'Berserk',
-    description: 'Object.assign(self, { atkSpd: +80%, def: -40% }); // RISKY!',
-    manaCost: 30,
-    cooldownTicks: 300,  // 15 seconds
-    currentCooldownTicks: 0,
-    effect: { type: 'berserk', attackSpeedBonus: 0.8, defenseReduction: 0.4, duration: 10 },
-    unlocked: false,
-    requiredConcept: 'objects',
-    emoji: '😤',
-    tier: 7
-  },
-  {
-    id: 'focus-strike',
-    name: 'Focus',
-    description: 'this.buffs = { crit: guaranteed, dmg: +60% }; // SETUP!',
-    manaCost: 25,
-    cooldownTicks: 180,  // 9 seconds
-    currentCooldownTicks: 0,
-    effect: { type: 'focus_strike', critBonus: 1.0, damageBonus: 0.6, expireTicks: 80 },
-    unlocked: false,
-    requiredConcept: 'objects',
-    emoji: '🎯',
-    tier: 7
-  },
-  {
-    id: 'calculated-strike',
-    name: 'Calculated',
-    description: 'const dmg = enemy.attack * 3; // Turns their power against them!',
+    id: 'read-property',
+    name: 'enemy.attack',
+    description: 'const dmg = enemy.attack * 3; // Read their power!',
     manaCost: 22,
-    cooldownTicks: 120,  // 6 seconds
+    cooldownTicks: 100,  // 5 seconds
     currentCooldownTicks: 0,
     effect: { type: 'reflect_stat', stat: 'attack', multiplier: 3 },
     unlocked: false,
     requiredConcept: 'objects',
-    emoji: '🧠',
+    emoji: '🔍',
+    tier: 7
+  },
+  {
+    id: 'spread-buffs',
+    name: '{...buffs}',
+    description: 'damage = attack * (1 + buffs.length * 0.5); // More buffs = more!',
+    manaCost: 25,
+    cooldownTicks: 120,  // 6 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'spread_buffs', baseScaling: 1.0, perBuffBonus: 0.5 },
+    unlocked: false,
+    requiredConcept: 'objects',
+    emoji: '✨',
+    tier: 7
+  },
+  {
+    id: 'destructure-stats',
+    name: '{ atk, def }',
+    description: 'const { atk, def, crit } = this; dmg = (atk + def) * crit;',
+    manaCost: 30,
+    cooldownTicks: 140,  // 7 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'destructure_self', statMultiplier: 1.0 },
+    unlocked: false,
+    requiredConcept: 'objects',
+    emoji: '📦',
     tier: 7
   },
 
@@ -1496,7 +1500,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'conditionals',
     description: 'Combine conditions with AND, OR, NOT for smarter scripts!',
     codeExample: `if (hp < 50 && mana > 20) {\n  heal();\n} else if (enemy.hp < 30 || hp > 80) {\n  powerStrike();\n}`,
-    unlocksAbilities: ['crippling-blow', 'condition-chain', 'not-full'],
+    unlocksAbilities: ['crippling-blow', 'conditional-cube', 'mana-reap'],
     unlocksFeatures: ['operator_and', 'operator_or', 'operator_not', 'condition_ability_ready', 'action_defend'],
     unlocksConditions: ['ability_ready'],
     statBonus: {},
@@ -1515,7 +1519,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'loops',
     description: 'Repeat actions efficiently - combo attacks!',
     codeExample: `for (let i = 0; i < 3; i++) {\n  attack();\n  if (enemy.hp <= 0) break;\n}`,
-    unlocksAbilities: ['triple-strike', 'rapid-fire', 'ramping-fury'],
+    unlocksAbilities: ['iterate-strike', 'while-fury', 'break-point'],
     unlocksFeatures: ['loop_for', 'loop_counter', 'loop_break', 'loop_continue', 'action_meditate'],
     unlocksConditions: ['on_kill', 'on_crit'],
     statBonus: {},
@@ -1534,7 +1538,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'functions',
     description: 'Create reusable code - define your own attack combos!',
     codeExample: `function burst(enemy) {\n  if (enemy.hp < 25) return execute();\n  return powerStrike();\n}`,
-    unlocksAbilities: ['percent-slash', 'finishing-blow', 'vampiric-touch'],
+    unlocksAbilities: ['calc-damage', 'return-strike', 'call-stack'],
     unlocksFeatures: ['function_define', 'function_params', 'function_return', 'function_arrow', 'math_operations'],
     unlocksConditions: [],
     statBonus: {},
@@ -1553,7 +1557,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'arrays',
     description: 'Work with collections - mana manipulation for big combos!',
     codeExample: `const enemies = getEnemies();\nenemies.forEach(e => {\n  if (e.hp < 30) execute(e);\n});`,
-    unlocksAbilities: ['mana-overload', 'mana-bomb', 'conservation'],
+    unlocksAbilities: ['push-damage', 'pop-damage', 'length-strike'],
     unlocksFeatures: ['array_length', 'array_foreach', 'array_includes', 'array_find'],
     unlocksConditions: [],
     statBonus: {},
@@ -1572,7 +1576,7 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'objects',
     description: 'Group related data - read enemy stats, manage buffs!',
     codeExample: `const { hp, attack } = enemy;\nif (attack > 50) {\n  defend();\n}`,
-    unlocksAbilities: ['berserk', 'focus-strike', 'calculated-strike'],
+    unlocksAbilities: ['read-property', 'spread-buffs', 'destructure-stats'],
     unlocksFeatures: ['object_access', 'object_destructure', 'object_spread'],
     unlocksConditions: [],
     statBonus: {},

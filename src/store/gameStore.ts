@@ -71,6 +71,12 @@ const getInitialState = (): GameState => ({
   tickAccumulator: 0,
   abilitiesUsedThisCombat: 0,
   lastHitTick: 0,
+  // Ability state tracking (for concept-based abilities)
+  iterateStacks: 0,
+  lastIterateUseTick: 0,
+  damageArray: [],
+  storedReturnDamage: 0,
+  invulnTicksRemaining: 0,
   // Stats
   killCount: 0,
   sessionKills: 0,
@@ -219,23 +225,31 @@ export const useGameStore = create<GameStore>()(
           // ============================================
           // TICK: Ability cooldowns (tick-based)
           // ============================================
-          set(s => ({
-            hero: {
-              ...s.hero,
-              abilities: s.hero.abilities.map(ability => ({
-                ...ability,
-                currentCooldownTicks: Math.max(0, (ability.currentCooldownTicks || 0) - 1)
-              })),
-              // Decay next attack modifiers
-              nextAttackModifiers: (s.hero.nextAttackModifiers || [])
-                .map(mod => ({
-                  ...mod,
-                  ticksRemaining: (mod.ticksRemaining || mod.expireAfterTicks || 0) - 1
-                }))
-                .filter(mod => (mod.ticksRemaining ?? 0) > 0)
-            },
-            currentTick: s.currentTick + 1
-          }));
+          set(s => {
+            // Decay iterate stacks if they've expired
+            const ticksSinceIterate = s.currentTick - s.lastIterateUseTick;
+            const iterateDecayed = ticksSinceIterate > 60 ? 0 : s.iterateStacks; // 3 second decay
+
+            return {
+              hero: {
+                ...s.hero,
+                abilities: s.hero.abilities.map(ability => ({
+                  ...ability,
+                  currentCooldownTicks: Math.max(0, (ability.currentCooldownTicks || 0) - 1)
+                })),
+                // Decay next attack modifiers
+                nextAttackModifiers: (s.hero.nextAttackModifiers || [])
+                  .map(mod => ({
+                    ...mod,
+                    ticksRemaining: (mod.ticksRemaining || mod.expireAfterTicks || 0) - 1
+                  }))
+                  .filter(mod => (mod.ticksRemaining ?? 0) > 0)
+              },
+              currentTick: s.currentTick + 1,
+              iterateStacks: iterateDecayed,
+              invulnTicksRemaining: Math.max(0, s.invulnTicksRemaining - 1)
+            };
+          });
 
           // ============================================
           // TICK: Mana regen (1 mana per 10 ticks = 2/sec)
@@ -482,6 +496,12 @@ export const useGameStore = create<GameStore>()(
 
       mobAttack: (mob) => {
         const state = get();
+
+        // Check invulnerability (from Mana Reap)
+        if (state.invulnTicksRemaining > 0) {
+          return; // Immune to damage
+        }
+
         const { damage } = calculateDamage(
           mob.attack,
           state.hero.stats.defense,
@@ -1048,6 +1068,196 @@ export const useGameStore = create<GameStore>()(
             message: `${ability.emoji} BERSERK! +${Math.floor(effect.attackSpeedBonus * 100)}% ATK SPD, -${Math.floor(effect.defenseReduction * 100)}% DEF!`,
             color: '#EF4444'
           });
+        }
+
+        // ============================================================
+        // NEW CONCEPT-BASED ABILITIES
+        // ============================================================
+
+        // === CONDITIONAL CUBE (500% if HP=50% AND mana=100%) ===
+        else if (effect.type === 'conditional_cube') {
+          if (target) {
+            const hpPercent = hero.stats.hp / hero.stats.maxHp;
+            const manaPercent = hero.stats.mana / hero.stats.maxMana;
+            const hpMatch = Math.abs(hpPercent - effect.hpTarget) <= effect.tolerance;
+            const manaMatch = Math.abs(manaPercent - effect.manaTarget) <= effect.tolerance;
+            const conditionMet = hpMatch && manaMatch;
+
+            const scaling = conditionMet ? effect.bonusScaling : 1.0;
+            const damage = hero.stats.attack * scaling;
+
+            if (conditionMet) {
+              applyDamage(damage, target, `${ability.emoji} CONDITIONAL CUBE! HP=${Math.floor(hpPercent * 100)}% ∧ Mana=${Math.floor(manaPercent * 100)}%! ${Math.floor(damage)} damage!`, '#F59E0B');
+            } else {
+              applyDamage(damage, target, `${ability.emoji} Conditions not met (HP: ${Math.floor(hpPercent * 100)}%, Mana: ${Math.floor(manaPercent * 100)}%). ${Math.floor(damage)} damage`, '#6B7280');
+            }
+          }
+        }
+
+        // === MANA REAP (Convert 99% HP to mana, gain invulnerability) ===
+        else if (effect.type === 'mana_reap') {
+          const currentHp = hero.stats.hp;
+          const hpToConvert = Math.floor(currentHp * effect.hpToManaPercent);
+          const manaGained = hpToConvert; // 1:1 HP to mana
+
+          set(s => ({
+            hero: {
+              ...s.hero,
+              stats: {
+                ...s.hero.stats,
+                hp: Math.max(1, s.hero.stats.hp - hpToConvert),
+                mana: Math.min(s.hero.stats.maxMana, s.hero.stats.mana + manaGained)
+              }
+            },
+            invulnTicksRemaining: effect.invulnTicks
+          }));
+
+          get().addLogEntry({
+            type: 'ability',
+            message: `${ability.emoji} MANA REAP! -${hpToConvert} HP → +${manaGained} Mana! Invulnerable for 1s!`,
+            color: '#A855F7'
+          });
+        }
+
+        // === ITERATE (Stacking damage on repeated use) ===
+        else if (effect.type === 'iterate') {
+          if (target) {
+            // Check if stacks should reset (too long since last use)
+            const ticksSinceLastUse = state.currentTick - state.lastIterateUseTick;
+            const currentStacks = ticksSinceLastUse > effect.decayTicks ? 0 : state.iterateStacks;
+            const newStacks = Math.min(currentStacks + 1, effect.maxStacks);
+
+            const scaling = effect.baseScaling + (currentStacks * effect.stackBonus);
+            const damage = hero.stats.attack * scaling;
+
+            set({ iterateStacks: newStacks, lastIterateUseTick: state.currentTick });
+            applyDamage(damage, target, `${ability.emoji} Iterate[${currentStacks}]! ${Math.floor(damage)} damage (${Math.floor(scaling * 100)}%)`, '#3B82F6');
+          }
+        }
+
+        // === WHILE FURY (Fast damage that drains mana) ===
+        else if (effect.type === 'while_active') {
+          if (target) {
+            const damage = hero.stats.attack * effect.damageScaling;
+            applyDamage(damage, target, `${ability.emoji} while(mana) { hit! } ${Math.floor(damage)} damage`, '#06B6D4');
+          }
+        }
+
+        // === BREAK POINT (Normal damage until threshold, then finisher) ===
+        else if (effect.type === 'break_finisher') {
+          if (target) {
+            const enemyHpPercent = target.hp / target.maxHp;
+            const isFinisher = enemyHpPercent <= effect.threshold;
+            const scaling = isFinisher ? effect.finisherScaling : effect.normalScaling;
+            const damage = hero.stats.attack * scaling;
+
+            if (isFinisher) {
+              applyDamage(damage, target, `${ability.emoji} BREAK! Enemy HP ≤ ${Math.floor(effect.threshold * 100)}%! ${Math.floor(damage)} finisher!`, '#DC2626');
+            } else {
+              applyDamage(damage, target, `${ability.emoji} while(hp > ${Math.floor(effect.threshold * 100)}%) { ${Math.floor(damage)} }`, '#6B7280');
+            }
+          }
+        }
+
+        // === RETURN VALUE (Store damage, return it next use) ===
+        else if (effect.type === 'return_value') {
+          if (target) {
+            const baseDamage = hero.stats.attack * effect.baseScaling;
+            const storedBonus = state.storedReturnDamage * effect.storedMultiplier;
+            const totalDamage = baseDamage + storedBonus;
+
+            // Store current attack for next use
+            set({ storedReturnDamage: hero.stats.attack });
+
+            applyDamage(totalDamage, target, `${ability.emoji} return ${Math.floor(baseDamage)}${storedBonus > 0 ? ` + stored(${Math.floor(storedBonus)})` : ''}!`, '#8B5CF6');
+          }
+        }
+
+        // === CALL STACK (Damage scales with abilities used this combat) ===
+        else if (effect.type === 'call_stack') {
+          if (target) {
+            const callDepth = state.abilitiesUsedThisCombat;
+            const scaling = effect.baseScaling + (callDepth * effect.depthBonus);
+            const damage = hero.stats.attack * scaling;
+
+            applyDamage(damage, target, `${ability.emoji} CallStack[${callDepth}]! ${Math.floor(damage)} damage (${Math.floor(scaling * 100)}%)`, '#10B981');
+          }
+        }
+
+        // === ARRAY PUSH (Store damage for later) ===
+        else if (effect.type === 'array_push') {
+          const damageToStore = Math.floor(hero.stats.attack * effect.damageStored);
+          const currentArray = state.damageArray || [];
+
+          if (currentArray.length < effect.maxStacks) {
+            set({ damageArray: [...currentArray, damageToStore] });
+            get().addLogEntry({
+              type: 'ability',
+              message: `${ability.emoji} arr.push(${damageToStore})! Array length: ${currentArray.length + 1}`,
+              color: '#3B82F6'
+            });
+          } else {
+            get().addLogEntry({
+              type: 'ability',
+              message: `${ability.emoji} Array full! Max ${effect.maxStacks} items.`,
+              color: '#EF4444'
+            });
+          }
+        }
+
+        // === ARRAY POP (Release all stored damage) ===
+        else if (effect.type === 'array_pop') {
+          if (target) {
+            const currentArray = state.damageArray || [];
+            const totalStored = currentArray.reduce((sum, d) => sum + d, 0);
+            const totalDamage = Math.floor(totalStored * effect.bonusMultiplier);
+
+            if (totalDamage > 0) {
+              set({ damageArray: [] });
+              applyDamage(totalDamage, target, `${ability.emoji} while(arr.length) { pop()! } ${currentArray.length} items = ${totalDamage} damage!`, '#F97316');
+            } else {
+              get().addLogEntry({
+                type: 'ability',
+                message: `${ability.emoji} Array empty! Push damage first.`,
+                color: '#6B7280'
+              });
+            }
+          }
+        }
+
+        // === ARRAY LENGTH (Damage based on abilities on cooldown) ===
+        else if (effect.type === 'array_length') {
+          if (target) {
+            const abilitiesOnCooldown = hero.abilities.filter(a => (a.currentCooldownTicks || 0) > 0).length;
+            const scaling = effect.baseScaling + (abilitiesOnCooldown * effect.perCooldownBonus);
+            const damage = hero.stats.attack * scaling;
+
+            applyDamage(damage, target, `${ability.emoji} abilities.filter(onCD).length = ${abilitiesOnCooldown}! ${Math.floor(damage)} damage`, '#F472B6');
+          }
+        }
+
+        // === SPREAD BUFFS (Damage scales with active buffs) ===
+        else if (effect.type === 'spread_buffs') {
+          if (target) {
+            const buffCount = hero.activeBuffs.length;
+            const scaling = effect.baseScaling + (buffCount * effect.perBuffBonus);
+            const damage = hero.stats.attack * scaling;
+
+            applyDamage(damage, target, `${ability.emoji} {...buffs}! ${buffCount} buffs = ${Math.floor(damage)} damage (${Math.floor(scaling * 100)}%)`, '#A855F7');
+          }
+        }
+
+        // === DESTRUCTURE SELF (Damage from own stats) ===
+        else if (effect.type === 'destructure_self') {
+          if (target) {
+            // const { atk, def, crit } = this; dmg = (atk + def) * crit
+            const atk = hero.stats.attack;
+            const def = hero.stats.defense;
+            const crit = hero.stats.critDamage;
+            const damage = Math.floor((atk + def) * crit * effect.statMultiplier);
+
+            applyDamage(damage, target, `${ability.emoji} { atk: ${atk}, def: ${def} } * crit(${crit.toFixed(1)}) = ${damage}!`, '#22C55E');
+          }
         }
 
       },
@@ -1669,11 +1879,12 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'codequest-rpg-storage',
-      version: 15,
+      version: 16,
       migrate: (persistedState: unknown, version: number) => {
-        // Version 15: Tick-based combat, ability synergies, power scaling
+        // Version 16: Concept-based abilities that REQUIRE understanding
+        // Redesigned Loops, Functions, Arrays, Objects abilities
         // Force fresh start to experience the new system
-        if (version < 15) {
+        if (version < 16) {
           return getInitialState();
         }
         return persistedState as GameState;

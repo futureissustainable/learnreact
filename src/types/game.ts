@@ -325,7 +325,45 @@ export type AbilityEffect =
   | { type: 'vampiric_touch'; lifestealBonus: number; expireTicks: number }
 
   // Execute Setup: Lower enemy HP below threshold, then execute
-  | { type: 'crippling_blow'; damagePercent: number; applyDebuff: string };
+  | { type: 'crippling_blow'; damagePercent: number; applyDebuff: string }
+
+  // ============ NEW CONCEPT-BASED ABILITIES ============
+
+  // Conditional Cube: Precision damage (500% if HP=50% AND mana=100%)
+  | { type: 'conditional_cube'; hpTarget: number; manaTarget: number; bonusScaling: number; tolerance: number }
+
+  // Mana Reap: Convert HP to mana, gain invulnerability
+  | { type: 'mana_reap'; hpToManaPercent: number; invulnTicks: number }
+
+  // Iterate: Stacking damage on repeated use (loops concept)
+  | { type: 'iterate'; baseScaling: number; stackBonus: number; maxStacks: number; decayTicks: number }
+
+  // While Active: Fast attacks that drain mana (while loop concept)
+  | { type: 'while_active'; damageScaling: number; manaDrain: number }
+
+  // Break Point: Normal damage until threshold, then finisher (break concept)
+  | { type: 'break_finisher'; threshold: number; normalScaling: number; finisherScaling: number }
+
+  // Return Value: Store damage, return it next use (functions concept)
+  | { type: 'return_value'; baseScaling: number; storedMultiplier: number }
+
+  // Call Stack: Damage scales with abilities used (function call stack concept)
+  | { type: 'call_stack'; baseScaling: number; depthBonus: number }
+
+  // Array Push: Store damage for later (array.push concept)
+  | { type: 'array_push'; damageStored: number; maxStacks: number }
+
+  // Array Pop: Release all stored damage (array.pop concept)
+  | { type: 'array_pop'; bonusMultiplier: number }
+
+  // Array Length: Damage based on abilities on cooldown (array.length concept)
+  | { type: 'array_length'; baseScaling: number; perCooldownBonus: number }
+
+  // Spread Buffs: Damage scales with active buffs (spread operator concept)
+  | { type: 'spread_buffs'; baseScaling: number; perBuffBonus: number }
+
+  // Destructure Self: Damage from own stats (destructuring concept)
+  | { type: 'destructure_self'; statMultiplier: number };
 
 // ============ AUTOMATION SCRIPTS ============
 
@@ -450,6 +488,13 @@ export interface GameState {
   currentTick: number;           // Global tick counter
   tickAccumulator: number;       // For smooth tick processing
   abilitiesUsedThisCombat: number; // For combo finisher
+
+  // Ability state tracking (for concept-based abilities)
+  iterateStacks: number;         // For Iterate Strike stacking
+  lastIterateUseTick: number;    // When Iterate Strike was last used
+  damageArray: number[];         // For push/pop abilities (Array concept)
+  storedReturnDamage: number;    // For Return(dmg) ability (Functions concept)
+  invulnTicksRemaining: number;  // For Mana Reap invulnerability
 
   // Stats
   killCount: number;
