@@ -342,23 +342,10 @@ export interface JsConcept {
   unlocksConditions: ScriptCondition['type'][];
   statBonus: Partial<CombatStats>;
 
-  // Progression
+  // Skill tree progression
   learned: boolean;
-  xpToLearn: number;
-  currentXp: number;
-  prerequisites: string[];
-
-  // Learning through gameplay
-  learnByDoing: LearnTask[];
-}
-
-export interface LearnTask {
-  id: string;
-  description: string;
-  type: 'kill_count' | 'use_ability' | 'trigger_script' | 'reach_zone' | 'defeat_boss';
-  target: number;
-  current: number;
-  completed: boolean;
+  goldCost: number;           // Buy with gold!
+  prerequisites: string[];    // Must learn these first
 }
 
 // ============ COMBAT LOG ============

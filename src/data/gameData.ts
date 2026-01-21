@@ -1317,12 +1317,12 @@ export function getShopItemPrice(item: Equipment): number {
   return Math.floor(basePrice * levelMultiplier * rarityMultiplier[item.rarity]);
 }
 
-// ============ JS CONCEPTS ============
+// ============ JS CONCEPTS - SKILL TREE ============
+// Buy with gold! Better automation → kill stronger mobs → more gold → repeat!
 
 export const JS_CONCEPTS: JsConcept[] = [
   // ============================================================
-  // TIER 1: VARIABLES - First automation! (kill 10 enemies)
-  // This is THE pivotal moment - you unlock while(true) + attack()
+  // TIER 1: VARIABLES (50g) - First automation!
   // ============================================================
   {
     id: 'variables',
@@ -1335,17 +1335,12 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksConditions: [],
     statBonus: { attack: 5 },
     learned: false,
-    xpToLearn: 100,
-    currentXp: 0,
-    prerequisites: [],
-    learnByDoing: [
-      { id: 'kill-10', description: 'Defeat 10 enemies manually', type: 'kill_count', target: 10, current: 0, completed: false }
-    ]
+    goldCost: 50,
+    prerequisites: []
   },
 
   // ============================================================
-  // TIER 2: CONDITIONALS - React to danger! (use Heal 5 times when hurt)
-  // Now you can write: if (hp < 50%) heal()
+  // TIER 2: CONDITIONALS (150g) - React to danger!
   // ============================================================
   {
     id: 'conditionals',
@@ -1358,17 +1353,12 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksConditions: ['hp_below', 'hp_above', 'enemy_hp_below', 'mana_above'],
     statBonus: { critChance: 0.05 },
     learned: false,
-    xpToLearn: 150,
-    currentXp: 0,
-    prerequisites: ['variables'],
-    learnByDoing: [
-      { id: 'heal-when-hurt', description: 'Use Heal when HP below 50% (5 times)', type: 'use_ability', target: 5, current: 0, completed: false }
-    ]
+    goldCost: 150,
+    prerequisites: ['variables']
   },
 
   // ============================================================
-  // TIER 3: OPERATORS - Combine conditions! (win 30 fights with automation)
-  // Now you can write: if (hp < 50 && mana > 20) heal()
+  // TIER 3: OPERATORS (300g) - Combine conditions!
   // ============================================================
   {
     id: 'operators',
@@ -1381,40 +1371,30 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksConditions: ['ability_ready'],
     statBonus: { defense: 5 },
     learned: false,
-    xpToLearn: 200,
-    currentXp: 0,
-    prerequisites: ['conditionals'],
-    learnByDoing: [
-      { id: 'script-kills-30', description: 'Let scripts kill 30 enemies', type: 'trigger_script', target: 30, current: 0, completed: false }
-    ]
+    goldCost: 300,
+    prerequisites: ['conditionals']
   },
 
   // ============================================================
-  // TIER 4: LOOPS - Multi-hit combos! (kill 50 enemies total)
-  // Now you can write: for (let i = 0; i < 3; i++) attack()
+  // TIER 4: LOOPS (500g) - Multi-hit combos!
   // ============================================================
   {
     id: 'loops',
     name: 'Loops',
     category: 'loops',
-    description: 'Repeat actions efficiently - combo attacks, farming loops!',
+    description: 'Repeat actions efficiently - combo attacks!',
     codeExample: `for (let i = 0; i < 3; i++) {\n  attack();\n  if (enemy.hp <= 0) break;\n}`,
     unlocksAbilities: ['double-tap', 'triple-strike', 'ramping-fury', 'for-loop'],
     unlocksFeatures: ['loop_for', 'loop_counter', 'loop_break', 'loop_continue', 'action_meditate'],
     unlocksConditions: ['on_kill', 'on_crit'],
     statBonus: { attackSpeed: 0.1 },
     learned: false,
-    xpToLearn: 250,
-    currentXp: 0,
-    prerequisites: ['operators'],
-    learnByDoing: [
-      { id: 'kill-50', description: 'Defeat 50 enemies total', type: 'kill_count', target: 50, current: 0, completed: false }
-    ]
+    goldCost: 500,
+    prerequisites: ['operators']
   },
 
   // ============================================================
-  // TIER 5: FUNCTIONS - Reusable code! (reach Zone 2)
-  // Now you can write: function burst() { powerStrike(); execute(); }
+  // TIER 5: FUNCTIONS (800g) - Reusable code!
   // ============================================================
   {
     id: 'functions',
@@ -1424,20 +1404,15 @@ export const JS_CONCEPTS: JsConcept[] = [
     codeExample: `function burst(enemy) {\n  if (enemy.hp < 30) return execute();\n  return powerStrike();\n}`,
     unlocksAbilities: ['percent-slash', 'finishing-blow', 'life-drain', 'console-log'],
     unlocksFeatures: ['function_define', 'function_params', 'function_return', 'function_arrow', 'math_operations'],
-    unlocksConditions: ['ability_ready'],
+    unlocksConditions: [],
     statBonus: { maxMana: 20 },
     learned: false,
-    xpToLearn: 300,
-    currentXp: 0,
-    prerequisites: ['loops'],
-    learnByDoing: [
-      { id: 'reach-zone-2', description: 'Reach Loop Caverns (Zone 2)', type: 'reach_zone', target: 1, current: 0, completed: false }
-    ]
+    goldCost: 800,
+    prerequisites: ['loops']
   },
 
   // ============================================================
-  // TIER 6: ARRAYS - Handle groups! (reach Zone 3)
-  // Now you can write: enemies.forEach(e => attack(e))
+  // TIER 6: ARRAYS (1200g) - Handle groups!
   // ============================================================
   {
     id: 'arrays-basics',
@@ -1450,17 +1425,12 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksConditions: [],
     statBonus: { attack: 10 },
     learned: false,
-    xpToLearn: 400,
-    currentXp: 0,
-    prerequisites: ['functions'],
-    learnByDoing: [
-      { id: 'reach-zone-3', description: 'Reach Array Mountains (Zone 3)', type: 'reach_zone', target: 1, current: 0, completed: false }
-    ]
+    goldCost: 1200,
+    prerequisites: ['functions']
   },
 
   // ============================================================
-  // TIER 7: OBJECTS - Data structures! (defeat forEach Dragon boss)
-  // Now you can write: const { hp, mana } = player
+  // TIER 7: OBJECTS (1800g) - Data structures!
   // ============================================================
   {
     id: 'objects',
@@ -1473,17 +1443,12 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksConditions: [],
     statBonus: { defense: 10 },
     learned: false,
-    xpToLearn: 500,
-    currentXp: 0,
-    prerequisites: ['arrays-basics'],
-    learnByDoing: [
-      { id: 'defeat-foreach', description: 'Defeat the forEach Dragon', type: 'defeat_boss', target: 1, current: 0, completed: false }
-    ]
+    goldCost: 1800,
+    prerequisites: ['arrays-basics']
   },
 
   // ============================================================
-  // TIER 8: ARRAY METHODS - Transform data! (defeat The Reducer boss)
-  // Now you can write: enemies.filter(e => e.hp < 50).map(e => attack(e))
+  // TIER 8: ARRAY METHODS (2500g) - Transform data!
   // ============================================================
   {
     id: 'arrays-methods',
@@ -1496,17 +1461,12 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksConditions: [],
     statBonus: { critDamage: 0.2 },
     learned: false,
-    xpToLearn: 600,
-    currentXp: 0,
-    prerequisites: ['objects'],
-    learnByDoing: [
-      { id: 'defeat-reducer', description: 'Defeat The Reducer boss', type: 'defeat_boss', target: 1, current: 0, completed: false }
-    ]
+    goldCost: 2500,
+    prerequisites: ['objects']
   },
 
   // ============================================================
-  // TIER 9: ASYNC - Timing is everything! (reach Zone 4)
-  // Now you can write: await heal(); await attack();
+  // TIER 9: ASYNC (4000g) - Timing is everything!
   // ============================================================
   {
     id: 'async-basics',
@@ -1519,17 +1479,12 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksConditions: [],
     statBonus: { attackSpeed: 0.15 },
     learned: false,
-    xpToLearn: 700,
-    currentXp: 0,
-    prerequisites: ['arrays-methods'],
-    learnByDoing: [
-      { id: 'reach-zone-4', description: 'Reach Promise Peaks (Zone 4)', type: 'reach_zone', target: 1, current: 0, completed: false }
-    ]
+    goldCost: 4000,
+    prerequisites: ['arrays-methods']
   },
 
   // ============================================================
-  // TIER 10: REACT BASICS - Components! (defeat Promise Titan)
-  // Now you understand: props, events, composition
+  // TIER 10: REACT BASICS (6000g) - Components!
   // ============================================================
   {
     id: 'react-basics',
@@ -1542,17 +1497,12 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksConditions: [],
     statBonus: { maxHp: 50 },
     learned: false,
-    xpToLearn: 800,
-    currentXp: 0,
-    prerequisites: ['async-basics'],
-    learnByDoing: [
-      { id: 'defeat-promise', description: 'Defeat Promise Titan', type: 'defeat_boss', target: 1, current: 0, completed: false }
-    ]
+    goldCost: 6000,
+    prerequisites: ['async-basics']
   },
 
   // ============================================================
-  // TIER 11: REACT HOOKS - State mastery! (reach React Realm)
-  // Now you can write: const [damage, setDamage] = useState(0)
+  // TIER 11: REACT HOOKS (10000g) - State mastery!
   // ============================================================
   {
     id: 'react-hooks',
@@ -1565,12 +1515,8 @@ export const JS_CONCEPTS: JsConcept[] = [
     unlocksConditions: [],
     statBonus: { critChance: 0.1, critDamage: 0.3 },
     learned: false,
-    xpToLearn: 1000,
-    currentXp: 0,
-    prerequisites: ['react-basics'],
-    learnByDoing: [
-      { id: 'reach-react', description: 'Reach React Realm (Zone 5)', type: 'reach_zone', target: 1, current: 0, completed: false }
-    ]
+    goldCost: 10000,
+    prerequisites: ['react-basics']
   }
 ];
 

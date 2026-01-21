@@ -1,7 +1,7 @@
 'use client';
 
 import { useGameStore } from '@/store/gameStore';
-import { Target, Skull, Star, Lightning, MapPin } from '@phosphor-icons/react';
+import { Target, Skull, Star, Lightning, MapPin, Coins } from '@phosphor-icons/react';
 
 export function NextGoal() {
   const hero = useGameStore(s => s.hero);
@@ -10,6 +10,7 @@ export function NextGoal() {
   const concepts = useGameStore(s => s.concepts);
   const bossesDefeated = useGameStore(s => s.bossesDefeated);
   const killCount = useGameStore(s => s.killCount);
+  const canBuyConcept = useGameStore(s => s.canBuyConcept);
 
   // Determine the next goal
   const getNextGoal = () => {
@@ -30,7 +31,7 @@ export function NextGoal() {
       }
     }
 
-    // Check for concept learning
+    // Check for available concept to buy
     const nextConcept = concepts.find(c => {
       if (c.learned) return false;
       const prereqsMet = c.prerequisites.every(p =>
@@ -39,14 +40,17 @@ export function NextGoal() {
       return prereqsMet;
     });
 
-    if (nextConcept && nextConcept.currentXp > 0) {
-      const progress = (nextConcept.currentXp / nextConcept.xpToLearn) * 100;
+    if (nextConcept) {
+      const canAfford = hero.gold >= nextConcept.goldCost;
+      const progress = canAfford ? 100 : (hero.gold / nextConcept.goldCost) * 100;
       return {
-        icon: Lightning,
-        title: `Learn: ${nextConcept.name}`,
-        description: nextConcept.learnByDoing[0]?.description || 'Keep battling!',
-        color: 'text-purple-400',
-        bgColor: 'bg-purple-500/20',
+        icon: canAfford ? Lightning : Coins,
+        title: canAfford ? `Learn: ${nextConcept.name}` : `Save for: ${nextConcept.name}`,
+        description: canAfford
+          ? `Ready to buy! (${nextConcept.goldCost}g)`
+          : `${hero.gold}/${nextConcept.goldCost} gold`,
+        color: canAfford ? 'text-purple-400' : 'text-yellow-400',
+        bgColor: canAfford ? 'bg-purple-500/20' : 'bg-yellow-500/20',
         progress,
       };
     }

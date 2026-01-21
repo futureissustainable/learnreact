@@ -71,7 +71,7 @@ const getInitialState = (): GameState => ({
   totalXpEarned: 0,
   bossesDefeated: [],
   zones: ZONES.map(z => ({ ...z })),
-  concepts: JS_CONCEPTS.map(c => ({ ...c, learnByDoing: c.learnByDoing.map(t => ({ ...t })) })),
+  concepts: JS_CONCEPTS.map(c => ({ ...c })),
   inventory: [],
   maxInventorySize: 50,
   combatSpeed: 1,
@@ -122,10 +122,9 @@ interface GameStore extends GameState {
   buyItem: (item: Equipment, price: number) => boolean;
   recalculateStats: () => void;
 
-  // Concepts
-  addConceptXp: (conceptId: string, amount: number) => void;
-  learnConcept: (conceptId: string) => void;
-  updateLearnTasks: (taskType: string, value?: number) => void;
+  // Concepts (Skill Tree)
+  buyConcept: (conceptId: string) => boolean;
+  canBuyConcept: (conceptId: string) => boolean;
 
   // Combat Log
   addLogEntry: (entry: Omit<CombatLogEntry, 'id' | 'timestamp'>) => void;
@@ -152,7 +151,7 @@ export const useGameStore = create<GameStore>()(
           initialized: true,
           currentZone: ZONES[0],
           zones: ZONES.map(z => ({ ...z })),
-          concepts: JS_CONCEPTS.map(c => ({ ...c, learnByDoing: c.learnByDoing.map(t => ({ ...t })) })),
+          concepts: JS_CONCEPTS.map(c => ({ ...c })),
           combatLog: [],
           killCount: 0,
           sessionKills: 0
@@ -669,8 +668,6 @@ export const useGameStore = create<GameStore>()(
           }
         }
 
-        // Update learn tasks
-        get().updateLearnTasks('use_ability');
       },
 
       killMob: (mobInstanceId) => {
@@ -700,9 +697,6 @@ export const useGameStore = create<GameStore>()(
           sessionKills: s.sessionKills + 1
         }));
 
-        // Update learn tasks
-        get().updateLearnTasks('kill_count');
-
         // Boss defeated
         if (mob.isBoss) {
           set(s => ({
@@ -714,8 +708,6 @@ export const useGameStore = create<GameStore>()(
             message: `BOSS DEFEATED: ${mob.name}!`,
             color: '#F97316'
           });
-
-          get().updateLearnTasks('defeat_boss');
 
           // Check zone unlocks
           const zones = get().zones;
@@ -878,8 +870,6 @@ export const useGameStore = create<GameStore>()(
               });
             }
 
-            get().updateLearnTasks('trigger_script');
-
             break; // Only one script per tick
           }
         }
@@ -896,16 +886,6 @@ export const useGameStore = create<GameStore>()(
           totalXpEarned: s.totalXpEarned + amount
         }));
         get().checkLevelUp();
-
-        // Add XP to concepts that are being learned
-        const concepts = get().concepts;
-        const activeConcept = concepts.find(c => !c.learned && c.prerequisites.every(
-          prereqId => concepts.find(p => p.id === prereqId)?.learned
-        ));
-
-        if (activeConcept) {
-          get().addConceptXp(activeConcept.id, Math.floor(amount * 0.5));
-        }
       },
 
       addGold: (amount) => {
@@ -981,7 +961,6 @@ export const useGameStore = create<GameStore>()(
           color: '#22C55E'
         });
 
-        get().updateLearnTasks('reach_zone');
         get().spawnMob();
       },
 
@@ -1205,29 +1184,40 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
-      // ============ CONCEPTS ============
+      // ============ CONCEPTS (SKILL TREE) ============
 
-      addConceptXp: (conceptId, amount) => {
-        set(s => ({
-          concepts: s.concepts.map(c => {
-            if (c.id !== conceptId) return c;
+      canBuyConcept: (conceptId) => {
+        const state = get();
+        const concept = state.concepts.find(c => c.id === conceptId);
+        if (!concept || concept.learned) return false;
 
-            const newXp = c.currentXp + amount;
-            if (newXp >= c.xpToLearn && !c.learned) {
-              get().learnConcept(conceptId);
-            }
+        // Check gold
+        if (state.hero.gold < concept.goldCost) return false;
 
-            return { ...c, currentXp: newXp };
-          })
-        }));
+        // Check prerequisites
+        const allPrereqsLearned = concept.prerequisites.every(prereqId =>
+          state.concepts.find(c => c.id === prereqId)?.learned
+        );
+        return allPrereqsLearned;
       },
 
-      learnConcept: (conceptId) => {
-        set(s => {
-          const concept = s.concepts.find(c => c.id === conceptId);
-          if (!concept) return s;
+      buyConcept: (conceptId) => {
+        const state = get();
+        if (!get().canBuyConcept(conceptId)) return false;
 
-          // Unlock abilities
+        const concept = state.concepts.find(c => c.id === conceptId);
+        if (!concept) return false;
+
+        // Deduct gold
+        set(s => ({
+          hero: {
+            ...s.hero,
+            gold: s.hero.gold - concept.goldCost
+          }
+        }));
+
+        // Mark as learned and unlock abilities
+        set(s => {
           const newAbilities = [...s.hero.abilities];
           ABILITIES.filter(a => a.requiredConcept === conceptId).forEach(ability => {
             if (!newAbilities.find(a => a.id === ability.id)) {
@@ -1248,32 +1238,23 @@ export const useGameStore = create<GameStore>()(
 
         get().recalculateStats();
 
-        const concept = get().concepts.find(c => c.id === conceptId);
-        if (concept) {
+        get().addLogEntry({
+          type: 'level_up',
+          message: `SKILL LEARNED: ${concept.name}! +${Object.entries(concept.statBonus).map(([k, v]) => `${v} ${k}`).join(', ')}`,
+          color: '#A855F7'
+        });
+
+        // Log unlocked abilities
+        const unlockedAbilities = ABILITIES.filter(a => a.requiredConcept === conceptId);
+        if (unlockedAbilities.length > 0) {
           get().addLogEntry({
             type: 'level_up',
-            message: `CONCEPT LEARNED: ${concept.name}!`,
-            color: '#A855F7'
+            message: `Unlocked: ${unlockedAbilities.map(a => a.emoji + ' ' + a.name).join(', ')}`,
+            color: '#cba6f7'
           });
         }
-      },
 
-      updateLearnTasks: (taskType, value = 1) => {
-        set(s => ({
-          concepts: s.concepts.map(concept => ({
-            ...concept,
-            learnByDoing: concept.learnByDoing.map(task => {
-              if (task.type !== taskType || task.completed) return task;
-
-              const newCurrent = task.current + value;
-              return {
-                ...task,
-                current: newCurrent,
-                completed: newCurrent >= task.target
-              };
-            })
-          }))
-        }));
+        return true;
       },
 
       // ============ COMBAT LOG ============
@@ -1306,10 +1287,10 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'codequest-rpg-storage',
-      version: 12,
+      version: 13,
       migrate: (persistedState: unknown, version: number) => {
-        // Force fresh - unified progression: concepts unlock abilities + script features
-        if (version < 12) {
+        // Force fresh - gold-based skill tree for concepts
+        if (version < 13) {
           return getInitialState();
         }
         return persistedState as GameState;
