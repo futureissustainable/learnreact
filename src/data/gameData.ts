@@ -643,7 +643,47 @@ export const ABILITIES: Ability[] = [
   },
 
   // ============================================================
-  // TIER 3: LOOPS - Learn for (let i = 0; i < n; i++)
+  // TIER 3: OPERATORS - Learn && || ! for complex conditions
+  // ============================================================
+  {
+    id: 'boolean-strike',
+    name: 'Boolean Strike',
+    description: 'if (crit || enemy.hp < 30%) { damage = 250% } // OR operator!',
+    manaCost: 16,
+    cooldown: 6,
+    currentCooldown: 0,
+    effect: { type: 'boolean_or', condition1: 'is_crit', condition2: 'enemy_hp_below', threshold: 0.3, bonusScaling: 2.5, normalScaling: 1.0 },
+    unlocked: false,
+    requiredConcept: 'operators',
+    emoji: '⚡'
+  },
+  {
+    id: 'combo-condition',
+    name: 'Combo Condition',
+    description: 'if (hp > 50 && mana > 30) { damage = 200%; heal(10%) } // AND operator!',
+    manaCost: 20,
+    cooldown: 8,
+    currentCooldown: 0,
+    effect: { type: 'boolean_and', condition1: 'hp_above', threshold1: 0.5, condition2: 'mana_above', threshold2: 0.3, bonusScaling: 2.0, healPercent: 0.1 },
+    unlocked: false,
+    requiredConcept: 'operators',
+    emoji: '🔗'
+  },
+  {
+    id: 'negation-blast',
+    name: 'Negation Blast',
+    description: 'if (!fullHp) { damage += missingHp% } // NOT operator!',
+    manaCost: 12,
+    cooldown: 5,
+    currentCooldown: 0,
+    effect: { type: 'boolean_not', condition: 'hp_full', bonusPerMissingPercent: 0.02 },
+    unlocked: false,
+    requiredConcept: 'operators',
+    emoji: '❗'
+  },
+
+  // ============================================================
+  // TIER 4: LOOPS - Learn for (let i = 0; i < n; i++)
   // ============================================================
   {
     id: 'double-tap',
@@ -889,6 +929,50 @@ export const ABILITIES: Ability[] = [
     requiredConcept: 'async-basics',
     emoji: '⛓️'
   },
+
+  // ============================================================
+  // TIER 10: REACT BASICS - Components & Props
+  // ============================================================
+  {
+    id: 'component-render',
+    name: 'Component Render',
+    description: '<DamageComponent damage={attack * 1.5} /> // Render for 150% damage!',
+    manaCost: 25,
+    cooldown: 7,
+    currentCooldown: 0,
+    effect: { type: 'damage', value: 0, scaling: 1.5 },
+    unlocked: false,
+    requiredConcept: 'react-basics',
+    emoji: '🧩'
+  },
+  {
+    id: 'props-drill',
+    name: 'Props Drill',
+    description: '<Parent><Child damage={dmg}/></Parent> // Drill 3 hits, 60% each!',
+    manaCost: 30,
+    cooldown: 10,
+    currentCooldown: 0,
+    effect: { type: 'multi_hit', hits: 3, scaling: 0.6 },
+    unlocked: false,
+    requiredConcept: 'react-basics',
+    emoji: '⬇️'
+  },
+  {
+    id: 'event-handler',
+    name: 'Event Handler',
+    description: 'onClick={() => { attack(); heal(15%) }} // Attack + heal on trigger!',
+    manaCost: 22,
+    cooldown: 8,
+    currentCooldown: 0,
+    effect: { type: 'lifesteal_burst', scaling: 1.2, healPercent: 0.15 },
+    unlocked: false,
+    requiredConcept: 'react-basics',
+    emoji: '👆'
+  },
+
+  // ============================================================
+  // TIER 11: REACT HOOKS - useState & useEffect
+  // ============================================================
   {
     id: 'use-effect',
     name: 'useEffect()',
@@ -1366,10 +1450,10 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'conditionals',
     description: 'Combine conditions with AND, OR, NOT for smarter scripts!',
     codeExample: `if (hp < 50 && mana > 20) {\n  heal();\n} else if (enemy.hp < 30 || hp > 80) {\n  powerStrike();\n}`,
-    unlocksAbilities: [],
+    unlocksAbilities: ['boolean-strike', 'combo-condition', 'negation-blast'],
     unlocksFeatures: ['operator_and', 'operator_or', 'operator_not', 'condition_ability_ready', 'action_defend'],
     unlocksConditions: ['ability_ready'],
-    statBonus: { defense: 5 },
+    statBonus: { defense: 5, maxMana: 10 },
     learned: false,
     goldCost: 300,
     prerequisites: ['conditionals']
@@ -1492,10 +1576,10 @@ export const JS_CONCEPTS: JsConcept[] = [
     category: 'react',
     description: 'Build reusable UI - understand props and events!',
     codeExample: `function AttackButton({ onAttack }) {\n  return <button onClick={onAttack}>Attack!</button>;\n}`,
-    unlocksAbilities: [],
+    unlocksAbilities: ['component-render', 'props-drill', 'event-handler'],
     unlocksFeatures: ['react_props', 'react_events'],
     unlocksConditions: [],
-    statBonus: { maxHp: 50 },
+    statBonus: { maxHp: 50, attack: 15 },
     learned: false,
     goldCost: 6000,
     prerequisites: ['async-basics']

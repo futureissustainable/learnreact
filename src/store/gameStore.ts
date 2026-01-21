@@ -641,6 +641,52 @@ export const useGameStore = create<GameStore>()(
           }
         }
 
+        // === BOOLEAN OR (bonus if either condition true) ===
+        else if (effect.type === 'boolean_or') {
+          if (target) {
+            const isCrit = Math.random() < hero.stats.critChance;
+            const enemyLow = (target.hp / target.maxHp) < effect.threshold;
+            const conditionMet = isCrit || enemyLow;
+            const scaling = conditionMet ? effect.bonusScaling : effect.normalScaling;
+            const damage = hero.stats.attack * scaling * (isCrit ? hero.stats.critDamage : 1);
+            const msg = conditionMet
+              ? `${ability.emoji} OR TRUE! ${isCrit ? 'CRIT' : 'EXECUTE'} ${Math.floor(damage)}!`
+              : `${ability.emoji} ${Math.floor(damage)} damage`;
+            applyDamage(damage, target, msg, conditionMet ? '#F59E0B' : '#A855F7');
+          }
+        }
+
+        // === BOOLEAN AND (bonus if both conditions true) ===
+        else if (effect.type === 'boolean_and') {
+          if (target) {
+            const cond1 = (hero.stats.hp / hero.stats.maxHp) > effect.threshold1;
+            const cond2 = (hero.stats.mana / hero.stats.maxMana) > effect.threshold2;
+            const conditionMet = cond1 && cond2;
+            const scaling = conditionMet ? effect.bonusScaling : 1.0;
+            const damage = hero.stats.attack * scaling;
+            applyDamage(damage, target, `${ability.emoji} ${conditionMet ? 'AND TRUE! ' : ''}${Math.floor(damage)} damage!`, conditionMet ? '#22C55E' : '#A855F7');
+            if (conditionMet && effect.healPercent) {
+              const healAmount = hero.stats.maxHp * effect.healPercent;
+              set(s => ({
+                hero: { ...s.hero, stats: { ...s.hero.stats, hp: Math.min(s.hero.stats.maxHp, s.hero.stats.hp + healAmount) } }
+              }));
+              get().addLogEntry({ type: 'heal', message: `💚 Combo heal: +${Math.floor(healAmount)}!`, color: '#22C55E' });
+            }
+          }
+        }
+
+        // === BOOLEAN NOT (bonus based on NOT full HP) ===
+        else if (effect.type === 'boolean_not') {
+          if (target) {
+            const hpPercent = hero.stats.hp / hero.stats.maxHp;
+            const notFull = hpPercent < 1;
+            const missingPercent = 1 - hpPercent;
+            const bonusDamage = notFull ? hero.stats.attack * missingPercent * (effect.bonusPerMissingPercent * 100) : 0;
+            const totalDamage = hero.stats.attack + bonusDamage;
+            applyDamage(totalDamage, target, `${ability.emoji} ${notFull ? '!fullHP ' : ''}${Math.floor(totalDamage)} damage!`, notFull ? '#F38BA8' : '#A855F7');
+          }
+        }
+
         // === HOT (Heal over time) ===
         else if (effect.type === 'hot') {
           const healPerTick = hero.stats.maxHp * effect.healPercent;

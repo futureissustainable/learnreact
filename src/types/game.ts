@@ -237,6 +237,11 @@ export type AbilityEffect =
   // Ternary operator!
   | { type: 'ternary'; condition: 'hp_above'; threshold: number; trueScaling: number; falseScaling: number }
 
+  // Boolean operators (AND, OR, NOT)
+  | { type: 'boolean_or'; condition1: string; condition2: string; threshold: number; bonusScaling: number; normalScaling: number }
+  | { type: 'boolean_and'; condition1: string; threshold1: number; condition2: string; threshold2: number; bonusScaling: number; healPercent?: number }
+  | { type: 'boolean_not'; condition: string; bonusPerMissingPercent: number }
+
   // Heal over time
   | { type: 'hot'; healPercent: number; ticks: number; interval: number }  // HoT (heal over time)
 
