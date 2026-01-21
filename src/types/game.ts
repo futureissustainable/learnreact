@@ -363,7 +363,48 @@ export type AbilityEffect =
   | { type: 'spread_buffs'; baseScaling: number; perBuffBonus: number }
 
   // Destructure Self: Damage from own stats (destructuring concept)
-  | { type: 'destructure_self'; statMultiplier: number };
+  | { type: 'destructure_self'; statMultiplier: number }
+
+  // ============ TIER 5: FUNCTIONS - Inscribe/Invoke ============
+  // Inscribe: Store last N spells as a "function"
+  | { type: 'inscribe_combo'; spellsToStore: number }
+  // Invoke: Replay the inscribed spells
+  | { type: 'invoke_combo' }
+  // Callback: Auto-counter when damaged
+  | { type: 'callback_counter'; counterScaling: number; durationTicks: number }
+
+  // ============ TIER 6: ARRAYS - Queue system ============
+  // (array_push and array_pop already exist above)
+  // Splice: Modify queue, boost next release
+  | { type: 'splice_queue'; nextReleaseMultiplier: number }
+
+  // ============ TIER 8: ARRAY METHODS - Transform queue ============
+  // Map: Multiply all values in queue
+  | { type: 'map_queue'; multiplier: number }
+  // Filter: Keep only values above threshold, bonus each
+  | { type: 'filter_queue'; threshold: number; bonusScaling: number }
+  // Reduce: Sum all into one attack
+  | { type: 'reduce_queue'; bonusMultiplier: number }
+
+  // ============ TIER 9: ASYNC - Prime/Detonate ============
+  // Prime: Start charging for N ticks
+  | { type: 'prime_charge'; chargeTicks: number }
+  // Detonate: Big damage if fully charged, small if not
+  | { type: 'detonate_charge'; fullScaling: number; partialScaling: number }
+  // Delayed Heal: Heal after N ticks
+  | { type: 'delayed_heal'; healPercent: number; delayTicks: number }
+
+  // ============ TIER 10: REACT BASICS - Stance system ============
+  // Set Stance: Cycle through stances
+  | { type: 'set_stance'; stances: string[] }
+  // Stance Strike: Bonus if stance matches enemy weakness
+  | { type: 'stance_strike'; matchScaling: number; missScaling: number }
+
+  // ============ TIER 11: REACT HOOKS - State & Resonance ============
+  // Release Stored: Release all useState power
+  | { type: 'release_stored_damage'; bonusMultiplier: number }
+  // Resonance: 1000% if perfect (stance changed + matches arena), 0% otherwise
+  | { type: 'resonance'; perfectScaling: number; failScaling: number; windowTicks: number };
 
 // ============ AUTOMATION SCRIPTS ============
 
@@ -495,6 +536,28 @@ export interface GameState {
   damageArray: number[];         // For push/pop abilities (Array concept)
   storedReturnDamage: number;    // For Return(dmg) ability (Functions concept)
   invulnTicksRemaining: number;  // For Mana Reap invulnerability
+
+  // Tier 5: Functions - Inscribe/Invoke
+  inscribedSpells: string[];     // Spell IDs stored by Inscribe()
+  recentSpellsCast: string[];    // Last N spells for Inscribe to capture
+  callbackCounterActive: boolean; // Is Callback() counter active?
+  callbackCounterTicks: number;  // Ticks remaining for callback
+
+  // Tier 6-8: Arrays - Queue transforms
+  spliceBoostActive: boolean;    // Is next Release boosted?
+  spliceBoostMultiplier: number; // Multiplier for next release
+
+  // Tier 9: Async - Prime/Detonate
+  primeChargeTick: number;       // Tick when Prime was cast (0 = not charging)
+  primeChargeRequired: number;   // Ticks required for full charge
+  delayedHealTick: number;       // When delayed heal triggers (0 = none pending)
+  delayedHealAmount: number;     // Amount to heal
+
+  // Tier 10-11: React - Stance & State
+  currentStance: string;         // 'fire' | 'ice' | 'lightning'
+  lastStanceChangeTick: number;  // When stance was last changed
+  storedPower: number;           // useState power accumulator
+  arenaElement: string;          // Current arena element (cycles)
 
   // Stats
   killCount: number;

@@ -741,90 +741,91 @@ export const ABILITIES: Ability[] = [
   },
 
   // ============================================================
-  // TIER 5: FUNCTIONS (800g) - Functions take input, return output!
-  // Understanding parameters and return values = better damage
+  // TIER 5: FUNCTIONS (800g) - INSCRIBE → INVOKE pattern!
+  // Inscribe stores your spell combo. Invoke replays it.
+  // OPTIMAL PLAY: Cast your best spells, Inscribe, then spam Invoke!
   // ============================================================
   {
-    id: 'calc-damage',
-    name: 'Calc(enemy)',
-    description: 'function calc(e) { return e.maxHp * 0.12; } // Melts tanks!',
-    manaCost: 28,
-    cooldownTicks: 120,  // 6 seconds
+    id: 'inscribe',
+    name: 'Inscribe()',
+    description: 'function combo() { ...last3Spells } // Stores last 3 spells as a function!',
+    manaCost: 15,
+    cooldownTicks: 200,  // 10 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'percent_max_hp', percent: 0.12 },
+    effect: { type: 'inscribe_combo', spellsToStore: 3 },
     unlocked: false,
     requiredConcept: 'functions',
-    emoji: '📊',
+    emoji: '📝',
     tier: 5
   },
   {
-    id: 'return-strike',
-    name: 'Return(dmg)',
-    description: 'let stored = 0; return stored += lastDmg; // Stores & returns!',
-    manaCost: 15,
-    cooldownTicks: 60,  // 3 seconds
+    id: 'invoke',
+    name: 'Invoke()',
+    description: 'combo(); // Calls inscribed function - replays stored spells!',
+    manaCost: 25,
+    cooldownTicks: 80,  // 4 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'return_value', baseScaling: 0.8, storedMultiplier: 1.0 },
+    effect: { type: 'invoke_combo' },
+    unlocked: false,
+    requiredConcept: 'functions',
+    emoji: '📞',
+    tier: 5
+  },
+  {
+    id: 'callback',
+    name: 'Callback()',
+    description: 'onDamaged(() => counter(200%)); // When hit, auto-counter!',
+    manaCost: 30,
+    cooldownTicks: 160,  // 8 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'callback_counter', counterScaling: 2.0, durationTicks: 100 },
     unlocked: false,
     requiredConcept: 'functions',
     emoji: '↩️',
     tier: 5
   },
-  {
-    id: 'call-stack',
-    name: 'CallStack()',
-    description: 'damage = attack * callDepth; // +30% per ability used!',
-    manaCost: 20,
-    cooldownTicks: 100,  // 5 seconds
-    currentCooldownTicks: 0,
-    effect: { type: 'call_stack', baseScaling: 1.0, depthBonus: 0.3 },
-    unlocked: false,
-    requiredConcept: 'functions',
-    emoji: '📚',
-    tier: 5
-  },
 
   // ============================================================
-  // TIER 6: ARRAYS (1200g) - Push, pop, length - array operations!
-  // Understanding arrays = managing collections of damage/effects
+  // TIER 6: ARRAYS (1200g) - Index-based queue system!
+  // OPTIMAL PLAY: Fill queue slots, then Release for combo damage!
   // ============================================================
   {
-    id: 'push-damage',
-    name: 'arr.push(dmg)',
-    description: 'dmgArray.push(attack * 0.6); // Store damage for later!',
-    manaCost: 10,
-    cooldownTicks: 30,  // 1.5 seconds - fast to build up
+    id: 'queue',
+    name: 'Queue[i]',
+    description: 'spellQueue[i] = attack; // Store at indices 0-5! More = bigger release!',
+    manaCost: 8,
+    cooldownTicks: 20,  // 1 second - fast to fill queue
     currentCooldownTicks: 0,
-    effect: { type: 'array_push', damageStored: 0.6, maxStacks: 8 },
+    effect: { type: 'array_push', damageStored: 0.5, maxStacks: 6 },
     unlocked: false,
     requiredConcept: 'arrays-basics',
     emoji: '📥',
     tier: 6
   },
   {
-    id: 'pop-damage',
-    name: 'arr.pop()',
-    description: 'while (arr.length) { damage += arr.pop(); } // Release ALL!',
-    manaCost: 15,
-    cooldownTicks: 80,  // 4 seconds
+    id: 'release',
+    name: 'Release()',
+    description: 'for (i=0; i<queue.length; i++) execute(queue[i]); // Releases ALL!',
+    manaCost: 20,
+    cooldownTicks: 100,  // 5 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'array_pop', bonusMultiplier: 1.2 },
+    effect: { type: 'array_pop', bonusMultiplier: 1.5 },
     unlocked: false,
     requiredConcept: 'arrays-basics',
     emoji: '📤',
     tier: 6
   },
   {
-    id: 'length-strike',
-    name: 'arr.length',
-    description: 'damage = attack * abilities.filter(a => a.onCD).length;',
-    manaCost: 20,
-    cooldownTicks: 100,  // 5 seconds
+    id: 'index-strike',
+    name: 'Index[n]',
+    description: 'dmg = attack * (cooldowns.length * 0.5); // More on CD = more damage!',
+    manaCost: 18,
+    cooldownTicks: 80,  // 4 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'array_length', baseScaling: 0.5, perCooldownBonus: 0.4 },
+    effect: { type: 'array_length', baseScaling: 0.5, perCooldownBonus: 0.5 },
     unlocked: false,
     requiredConcept: 'arrays-basics',
-    emoji: '📏',
+    emoji: '🎯',
     tier: 6
   },
 
@@ -873,174 +874,180 @@ export const ABILITIES: Ability[] = [
   },
 
   // ============================================================
-  // TIER 8: ARRAY METHODS (2500g) - AoE, accumulation
+  // TIER 8: ARRAY METHODS (2500g) - Transform your damage queue!
+  // OPTIMAL PLAY: Build queue with Tier 6, then use .map()/.filter()/.reduce()!
   // ============================================================
   {
-    id: 'map-attack',
-    name: '.map() Strike',
-    description: 'enemies.map(e => hit(e, 100%)); // Hit ALL enemies!',
-    manaCost: 50,
-    cooldownTicks: 200,  // 10 seconds
+    id: 'map-transform',
+    name: '.map(x2)',
+    description: 'queue = queue.map(d => d * 2); // DOUBLES all queued damage!',
+    manaCost: 35,
+    cooldownTicks: 120,  // 6 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'aoe', damage: 0, scaling: 1.0, hitAll: true },
+    effect: { type: 'map_queue', multiplier: 2.0 },
     unlocked: false,
     requiredConcept: 'arrays-methods',
     emoji: '🗺️',
     tier: 8
   },
   {
-    id: 'reduce-finisher',
-    name: '.reduce() Finisher',
-    description: 'allDmg.reduce((a,b) => a+b) * 15%; // HUGE after long fights!',
-    manaCost: 60,
-    cooldownTicks: 400,  // 20 seconds
+    id: 'filter-strong',
+    name: '.filter(>50)',
+    description: 'queue = queue.filter(d => d > 50); // Keeps only big hits, +100% each!',
+    manaCost: 25,
+    cooldownTicks: 80,  // 4 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'reduce_damage', multiplier: 0.15 },
-    unlocked: false,
-    requiredConcept: 'arrays-methods',
-    emoji: '➕',
-    tier: 8
-  },
-  {
-    id: 'filter-weak',
-    name: '.filter() Weak',
-    description: 'targets.filter(t => t.hp < 40%).map(execute); // Mass execute!',
-    manaCost: 45,
-    cooldownTicks: 160,  // 8 seconds
-    currentCooldownTicks: 0,
-    effect: { type: 'execute', threshold: 0.4, bonusDamage: 5.0 },
+    effect: { type: 'filter_queue', threshold: 50, bonusScaling: 2.0 },
     unlocked: false,
     requiredConcept: 'arrays-methods',
     emoji: '🔍',
     tier: 8
   },
+  {
+    id: 'reduce-nuke',
+    name: '.reduce(sum)',
+    description: 'dmg = queue.reduce((a,b) => a+b, 0) * 1.5; // SUM ALL into one mega-hit!',
+    manaCost: 50,
+    cooldownTicks: 200,  // 10 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'reduce_queue', bonusMultiplier: 1.5 },
+    unlocked: false,
+    requiredConcept: 'arrays-methods',
+    emoji: '💥',
+    tier: 8
+  },
 
   // ============================================================
-  // TIER 9: ASYNC (4000g) - Delayed effects, chains
+  // TIER 9: ASYNC (4000g) - PRIME → DETONATE pattern!
+  // Prime starts charging (100 ticks). Detonate releases 5x damage!
+  // OPTIMAL PLAY: Prime, wait 100 ticks doing NOTHING, then Detonate!
   // ============================================================
   {
-    id: 'async-burst',
-    name: 'Async Burst',
-    description: 'await Promise.all([hit(), hit(), hit(), hit()]); // 4x 80%!',
-    manaCost: 55,
-    cooldownTicks: 160,  // 8 seconds
-    currentCooldownTicks: 0,
-    effect: { type: 'multi_hit', hits: 4, scaling: 0.8 },
-    unlocked: false,
-    requiredConcept: 'async-basics',
-    emoji: '⚡',
-    tier: 9
-  },
-  {
-    id: 'promise-chain',
-    name: 'Promise Chain',
-    description: 'attack().then(heal).then(crit); // Attack→Heal 20%→Big hit!',
-    manaCost: 45,
-    cooldownTicks: 180,  // 9 seconds
-    currentCooldownTicks: 0,
-    effect: { type: 'promise_chain', actions: ['attack', 'heal_20', 'crit_attack'] },
-    unlocked: false,
-    requiredConcept: 'async-basics',
-    emoji: '⛓️',
-    tier: 9
-  },
-  {
-    id: 'async-heal',
-    name: 'Async Heal',
-    description: 'await heal(12%, 6 ticks); // 72% HP over 6 seconds!',
-    manaCost: 50,
+    id: 'prime',
+    name: 'Prime',
+    description: 'const promise = new Promise(r => setTimeout(r, 5000)); // Start 100-tick charge!',
+    manaCost: 30,
     cooldownTicks: 300,  // 15 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'hot', healPercent: 0.12, ticks: 6, interval: 1.0 },
+    effect: { type: 'prime_charge', chargeTicks: 100 },
     unlocked: false,
     requiredConcept: 'async-basics',
-    emoji: '✨',
+    emoji: '⏳',
+    tier: 9
+  },
+  {
+    id: 'detonate',
+    name: 'Detonate',
+    description: 'await promise; // IF fully charged = 500% damage! Else = 50% damage!',
+    manaCost: 40,
+    cooldownTicks: 160,  // 8 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'detonate_charge', fullScaling: 5.0, partialScaling: 0.5 },
+    unlocked: false,
+    requiredConcept: 'async-basics',
+    emoji: '💥',
+    tier: 9
+  },
+  {
+    id: 'timeout',
+    name: 'setTimeout',
+    description: 'setTimeout(() => heal(50%), 60 ticks); // Delayed heal in 3 seconds!',
+    manaCost: 35,
+    cooldownTicks: 200,  // 10 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'delayed_heal', healPercent: 0.5, delayTicks: 60 },
+    unlocked: false,
+    requiredConcept: 'async-basics',
+    emoji: '⏰',
     tier: 9
   },
 
   // ============================================================
-  // TIER 10: REACT BASICS (6000g) - Component combos
+  // TIER 10: REACT BASICS (6000g) - Props & State concept!
+  // Set stance, then use props-based attacks that read your stance!
   // ============================================================
   {
-    id: 'component-render',
-    name: '<Damage />',
-    description: '<DamageComponent props={{dmg: 250%}} /> // Massive render!',
-    manaCost: 40,
-    cooldownTicks: 120,  // 6 seconds
+    id: 'set-stance',
+    name: 'setStance()',
+    description: 'const [stance, setStance] = useState("fire"); // Changes your stance!',
+    manaCost: 10,
+    cooldownTicks: 40,  // 2 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'damage', value: 0, scaling: 2.5 },
+    effect: { type: 'set_stance', stances: ['fire', 'ice', 'lightning'] },
     unlocked: false,
     requiredConcept: 'react-basics',
-    emoji: '🧩',
+    emoji: '🔄',
     tier: 10
   },
   {
-    id: 'props-drill',
-    name: 'Props Drill',
-    description: '<A><B><C hits={6} dmg={55%}/></C></B></A> // Deep drill!',
-    manaCost: 55,
+    id: 'stance-strike',
+    name: '<Strike stance={s}/>',
+    description: 'if (stance === enemy.weakness) dmg = 300%; else dmg = 100%;',
+    manaCost: 30,
+    cooldownTicks: 80,  // 4 seconds
+    currentCooldownTicks: 0,
+    effect: { type: 'stance_strike', matchScaling: 3.0, missScaling: 1.0 },
+    unlocked: false,
+    requiredConcept: 'react-basics',
+    emoji: '⚔️',
+    tier: 10
+  },
+  {
+    id: 'props-pass',
+    name: 'props.onHit()',
+    description: '<Attack onHit={(dmg) => heal(dmg * 0.3)} /> // Heal 30% of damage!',
+    manaCost: 45,
     cooldownTicks: 140,  // 7 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'multi_hit', hits: 6, scaling: 0.55 },
+    effect: { type: 'lifesteal_burst', scaling: 2.0, healPercent: 0.3 },
     unlocked: false,
     requiredConcept: 'react-basics',
-    emoji: '⬇️',
-    tier: 10
-  },
-  {
-    id: 'event-handler',
-    name: 'onClick()',
-    description: 'onClick={() => { attack(200%); heal(20%); }} // Click combo!',
-    manaCost: 45,
-    cooldownTicks: 160,  // 8 seconds
-    currentCooldownTicks: 0,
-    effect: { type: 'lifesteal_burst', scaling: 2.0, healPercent: 0.2 },
-    unlocked: false,
-    requiredConcept: 'react-basics',
-    emoji: '👆',
+    emoji: '📨',
     tier: 10
   },
 
   // ============================================================
-  // TIER 11: REACT HOOKS (10000g) - State management, ULTIMATE
+  // TIER 11: REACT HOOKS (10000g) - State tracking & Resonance!
+  // Resonance: 1000% ONLY if stance changed within 20 ticks AND matches arena!
+  // Otherwise: 0% damage (does nothing)!
   // ============================================================
   {
-    id: 'use-state',
-    name: 'useState()',
-    description: 'const [power, setPower] = useState(0); setPower(p => p + 100);',
-    manaCost: 35,
-    cooldownTicks: 60,  // 3 seconds - fast to stack
+    id: 'use-state-power',
+    name: 'useState(power)',
+    description: 'const [power, setPower] = useState(0); setPower(p => p + 150);',
+    manaCost: 25,
+    cooldownTicks: 40,  // 2 seconds - fast to stack
     currentCooldownTicks: 0,
-    effect: { type: 'stored_damage', baseDamage: 100, canStack: true },
+    effect: { type: 'stored_damage', baseDamage: 150, canStack: true },
     unlocked: false,
     requiredConcept: 'react-hooks',
     emoji: '📦',
     tier: 11
   },
   {
-    id: 'use-effect',
-    name: 'useEffect()',
-    description: 'useEffect(() => { atkSpd += 100%; }, []); // Mount buff!',
-    manaCost: 70,
-    cooldownTicks: 400,  // 20 seconds
+    id: 'release-state',
+    name: 'releaseState()',
+    description: 'const damage = power; setPower(0); // Release ALL stored power!',
+    manaCost: 35,
+    cooldownTicks: 100,  // 5 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'buff', stat: 'attackSpeed', value: 1.0, duration: 15 },
+    effect: { type: 'release_stored_damage', bonusMultiplier: 1.0 },
     unlocked: false,
     requiredConcept: 'react-hooks',
-    emoji: '⚛️',
+    emoji: '💥',
     tier: 11
   },
   {
-    id: 'blood-pact',
-    name: 'Blood Pact',
-    description: 'useCallback(() => { hp -= 50%; nextDmg *= 3; }); // ULTIMATE SETUP!',
-    manaCost: 40,
-    cooldownTicks: 300,  // 15 seconds
+    id: 'resonance',
+    name: 'Resonance',
+    description: 'useEffect(() => { if (stanceChanged && stanceMatchesArena) dmg = 1000%; else dmg = 0; }, [stance]);',
+    manaCost: 50,
+    cooldownTicks: 200,  // 10 seconds
     currentCooldownTicks: 0,
-    effect: { type: 'blood_pact', hpCostPercent: 0.5, damageMultiplier: 3.0, expireTicks: 80 },
+    effect: { type: 'resonance', perfectScaling: 10.0, failScaling: 0, windowTicks: 20 },
     unlocked: false,
     requiredConcept: 'react-hooks',
-    emoji: '🩸',
+    emoji: '🌊',
     tier: 11
   }
 ];
